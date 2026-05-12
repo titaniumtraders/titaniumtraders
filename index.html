@@ -1991,6 +1991,37 @@ Prioridad en retiros</textarea></div>
 </div>
 
 <script>
+const SUPA_URL = 'https://eyowitrmwhejrblnywpf.supabase.co';
+const SUPA_KEY = 'sb_publishable_Uc-k6BtjO0rKoEwlhCt09w_nhajKc9T';
+
+async function supaFetch(table, method, body, filters) {
+  var url = SUPA_URL + '/rest/v1/' + table;
+  if(filters) url += '?' + filters;
+  var opts = {method:method||'GET',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':method==='POST'?'return=representation':''}};
+  if(body) opts.body = JSON.stringify(body);
+  var res = await fetch(url, opts);
+  if(!res.ok){console.warn('Supabase error:',res.status);return null;}
+  var text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+async function dbGet(table,filters){return await supaFetch(table,'GET',null,filters||'order=created_at.desc');}
+async function dbInsert(table,data){return await supaFetch(table,'POST',data);}
+async function dbUpdate(table,id,data){return await supaFetch(table,'PATCH',data,'id=eq.'+id);}
+function generateUUID(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);});}
+async function syncUsuarios(){
+  try{
+    var u=await dbGet('usuarios');
+    if(u&&u.length)lsSet('usuarios',u.map(function(x){return{id:x.id,nombre:x.nombre||'',alias:x.alias||'',email:x.email||'',pais:x.pais||'',plan:x.plan||'Básico',estado:x.estado||'pendiente',inicio:x.inicio||'',vence:x.vence||'',notasAdmin:x.notas_admin||''};} ));
+    var s=await dbGet('senales');
+    if(s&&s.length)lsSet('senales',s.map(function(x){return{id:x.id,par:x.par,dir:x.dir,entrada:x.entrada,sl:x.sl,tp:x.tp,estado:x.estado,nota:x.nota||'',fecha:x.fecha};}));
+    var a=await dbGet('anuncios');
+    if(a&&a.length)lsSet('anuncios',a.map(function(x){return{id:x.id,tipo:x.tipo,titulo:x.titulo,msg:x.mensaje,fecha:x.fecha};}));
+    var p=await dbGet('pagos');
+    if(p&&p.length)lsSet('fin_comprobantes',p.map(function(x){return{id:x.id,usuario:x.usuario,monto:x.monto,metodo:x.metodo,ref:x.referencia,comprobante:x.comprobante,estado:x.estado,fecha:x.fecha};}));
+    console.log('Synced from Supabase');
+  }catch(e){console.warn('Sync failed:',e);}
+}
+
 // ── SYNC: localStorage → Supabase ──
 // Still use localStorage as cache, sync to Supabase in background
 function lsSet_sync(key, val, table, transformer) {
@@ -2140,7 +2171,7 @@ function enterPanel(){
   showModule('dashboard','🏠 Dashboard','Vista general de tu cuenta');
   window.scrollTo(0,0);
   // Sync from Supabase
-  syncUsuarios();
+  setTimeout(function(){if(typeof syncUsuarios==='function')syncUsuarios();},100);
 }
 
 function doLogout(){
@@ -4009,7 +4040,7 @@ function aregAprobar(id, nombre, plan) {
   // Update in Supabase
   dbUpdate('usuarios', id, {estado:'activo'}).then(function(){
     console.log('✅ Approved in Supabase');
-    syncUsuarios().then(function(){
+    if(typeof syncUsuarios==='function')syncUsuarios().then(function(){
       renderAregistros&&renderAregistros();
       aregRenderProcesados2&&aregRenderProcesados2();
     });
