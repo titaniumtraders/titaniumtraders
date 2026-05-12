@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t25</title>
+<title>Titanium Traders · t26</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -2423,6 +2423,7 @@ function handleRegister(){
   var ref=(document.getElementById('reg-referencia')||{}).value||'';
   var errEl=document.getElementById('regError');
   errEl.classList.remove('show');
+
   if(!nombre.trim()){errEl.textContent='⚠️ Ingresa tu nombre.';errEl.classList.add('show');return;}
   if(!email.includes('@')){errEl.textContent='⚠️ Email inválido.';errEl.classList.add('show');return;}
   if(password.length<6){errEl.textContent='⚠️ Contraseña mínimo 6 caracteres.';errEl.classList.add('show');return;}
@@ -2432,33 +2433,108 @@ function handleRegister(){
   if(!ref.trim()){errEl.textContent='⚠️ Ingresa la referencia.';errEl.classList.add('show');return;}
 
   var btn=document.querySelector('#registerModal .btn-plan');
-  if(btn){btn.textContent='⏳ Registrando...';btn.disabled=true;}
+  if(btn){btn.textContent='⏳ Enviando...';btn.disabled=true;}
 
-  var fecha=new Date().toLocaleDateString('es-CO');
-
-  // Register with Supabase Auth
+  // STEP 1: Sign up in Supabase Auth (sends confirmation email)
   fetch(SUPA_URL+'/auth/v1/signup',{
     method:'POST',
     headers:{'Content-Type':'application/json','apikey':SUPA_KEY},
-    body:JSON.stringify({email:email.trim(),password:password})
+    body:JSON.stringify({
+      email: email.trim(),
+      password: password,
+      options: {
+        emailRedirectTo: 'https://titaniumtraders.github.io/titaniumtraders'
+      }
+    })
   }).then(function(r){return r.json();}).then(function(data){
+    console.log('Signup response:', data);
+
+    if(data.error || data.code) {
+      if(btn){btn.textContent='🚀 ENVIAR REGISTRO';btn.disabled=false;}
+      var msg = data.error_description || data.msg || data.message || 'Error en el registro.';
+      if(msg.includes('already')) msg = 'Este email ya está registrado.';
+      errEl.textContent = '⚠️ ' + msg;
+      errEl.classList.add('show');
+      return;
+    }
+
+    // STEP 2: Save user data to usuarios table
+    var userId = (data.user && data.user.id) || (data.id);
+    if(!userId) {
+      if(btn){btn.textContent='🚀 ENVIAR REGISTRO';btn.disabled=false;}
+      errEl.textContent='⚠️ Error: no se pudo crear el usuario.';
+      errEl.classList.add('show');
+      return;
+    }
+
+    var fecha = new Date().toLocaleDateString('es-CO');
+    var nuevoUsuario = {
+      id: userId,
+      nombre: nombre.trim(),
+      alias: '',
+      email: email.trim(),
+      pais: pais.trim(),
+      plan: regPlanSel,
+      estado: 'pendiente',
+      inicio: new Date().toISOString().split('T')[0],
+      vence: null,
+      notas_admin: 'Monto: $'+monto+' | Método: '+metodo+' | Ref: '+ref
+    };
+
+    // Insert in tabla usuarios
+    fetch(SUPA_URL+'/rest/v1/usuarios', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(nuevoUsuario)
+    }).then(function(r){
+      console.log('Usuario insertado:', r.status);
+    });
+
+    // Insert in tabla pagos
+    fetch(SUPA_URL+'/rest/v1/pagos', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        usuario: nombre.trim(),
+        monto: parseFloat(monto),
+        metodo: metodo,
+        referencia: ref,
+        comprobante: regCompData || '',
+        estado: 'Pendiente',
+        fecha: fecha
+      })
+    }).then(function(r){
+      console.log('Pago insertado:', r.status);
+    });
+
+    // SUCCESS — show message
     if(btn){btn.textContent='🚀 ENVIAR REGISTRO';btn.disabled=false;}
-    var userId = (data.user&&data.user.id) || generateUUID();
-    var nu={id:userId,nombre:nombre.trim(),alias:'',email:email.trim(),pais:pais.trim(),plan:regPlanSel,estado:'pendiente',inicio:new Date().toISOString().split('T')[0],vence:null,notas_admin:'Monto: $'+monto+' | Método: '+metodo+' | Ref: '+ref};
-    // Save to Supabase tabla usuarios
-    dbInsert('usuarios',nu);
-    // Save pago
-    dbInsert('pagos',{usuario:nombre.trim(),monto:parseFloat(monto),metodo:metodo,referencia:ref,comprobante:regCompData||'',estado:'Pendiente',fecha:fecha});
-    // Show success
-    var s=document.getElementById('regSuccess');if(s)s.style.display='block';
+    var s=document.getElementById('regSuccess');
+    if(s){
+      s.innerHTML = '✅ <strong>¡Registro exitoso!</strong><br>Te enviamos un correo de confirmación a <strong>'+email.trim()+'</strong><br>Confirma tu email y luego espera la aprobación del administrador.';
+      s.style.display='block';
+    }
     ['reg-nombre','reg-pais','reg-email','reg-password','reg-monto','reg-referencia'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
     regPlanSel=null;regCompData=null;
     document.querySelectorAll('.reg-plan-card').forEach(function(c){c.style.border='2px solid var(--border)';});
     var rl=document.getElementById('reg-comp-label');if(rl)rl.textContent='Clic para subir comprobante';
-    setTimeout(function(){if(s)s.style.display='none';closeModal('registerModal');},4000);
-  }).catch(function(){
+    setTimeout(function(){if(s)s.style.display='none';closeModal('registerModal');},6000);
+
+  }).catch(function(e){
     if(btn){btn.textContent='🚀 ENVIAR REGISTRO';btn.disabled=false;}
-    errEl.textContent='Error de conexión.';errEl.classList.add('show');
+    console.error('Register error:', e);
+    errEl.textContent='⚠️ Error de conexión. Verifica tu internet.';
+    errEl.classList.add('show');
   });
 }
 
@@ -2754,48 +2830,102 @@ function handleLogin(){
   var pass=(document.getElementById('loginPass').value||'').trim();
   var errEl=document.getElementById('loginError');
   errEl.classList.remove('show');
-  if(!user){errEl.textContent='Ingresa tu usuario o email.';errEl.classList.add('show');return;}
-  
-  // Special codes
-  if(user==='1739'){currentUser={name:'DEV · 1739',role:'PROGRAMADOR',isAdmin:true,isDev:true,initial:'⚙',plan:'',vence:''};closeModal('loginModal');document.body.style.overflow='';enterPanel();return;}
-  if(user==='administrador'){currentUser={name:'EMMANUEL OCAMPO',role:'ADMINISTRADOR',isAdmin:true,isDev:false,initial:'E',plan:'VIP',vence:''};closeModal('loginModal');document.body.style.overflow='';enterPanel();return;}
 
-  // Show loading
+  if(!user){errEl.textContent='Ingresa tu email.';errEl.classList.add('show');return;}
+
+  // Special codes
+  if(user==='1739'){
+    currentUser={name:'DEV · 1739',role:'PROGRAMADOR',isAdmin:true,isDev:true,initial:'⚙',plan:'',vence:''};
+    closeModal('loginModal');document.body.style.overflow='';enterPanel();return;
+  }
+  if(user==='administrador'){
+    currentUser={name:'EMMANUEL OCAMPO',role:'ADMINISTRADOR',isAdmin:true,isDev:false,initial:'E',plan:'VIP',vence:''};
+    closeModal('loginModal');document.body.style.overflow='';enterPanel();return;
+  }
+
+  // Regular user login - check email format
+  if(!user.includes('@')){
+    errEl.textContent='Ingresa un email válido.';errEl.classList.add('show');return;
+  }
+  if(!pass){
+    errEl.textContent='Ingresa tu contraseña.';errEl.classList.add('show');return;
+  }
+
   var btn=document.querySelector('#loginModal .btn-plan');
   if(btn){btn.textContent='⏳ Verificando...';btn.disabled=true;}
 
-  // Try Supabase Auth
+  // STEP 1: Login with Supabase Auth
   fetch(SUPA_URL+'/auth/v1/token?grant_type=password',{
     method:'POST',
     headers:{'Content-Type':'application/json','apikey':SUPA_KEY},
     body:JSON.stringify({email:user,password:pass})
   }).then(function(r){return r.json();}).then(function(data){
-    if(btn){btn.textContent='⚡ INGRESAR';btn.disabled=false;}
-    if(data.error||!data.access_token){
-      errEl.textContent='Email o contraseña incorrectos.';errEl.classList.add('show');return;
+    console.log('Login response:', data);
+
+    if(data.error || !data.access_token){
+      if(btn){btn.textContent='⚡ INGRESAR';btn.disabled=false;}
+      var msg = data.error_description || data.msg || 'Email o contraseña incorrectos.';
+      if(msg.includes('Email not confirmed') || msg.includes('email_not_confirmed')) {
+        msg = 'Debes confirmar tu email primero. Revisa tu bandeja de entrada.';
+      }
+      errEl.textContent = msg;
+      errEl.classList.add('show');
+      return;
     }
-    // Get user from usuarios table
-    var userId = data.user&&data.user.id;
-    supaFetch('usuarios','GET',null,'email=eq.'+encodeURIComponent(user)).then(function(rows){
-      var found = rows&&rows[0];
-      if(!found){
-        // Try by id
-        if(userId){
-          supaFetch('usuarios','GET',null,'id=eq.'+userId).then(function(rows2){
-            var u2=rows2&&rows2[0];
-            if(!u2){errEl.textContent='Usuario no encontrado en el sistema.';errEl.classList.add('show');return;}
-            loginWithUser(u2);
-          });
-        } else {
-          errEl.textContent='Usuario no encontrado en el sistema.';errEl.classList.add('show');
-        }
+
+    // STEP 2: Get user data from tabla usuarios
+    var userId = data.user && data.user.id;
+    fetch(SUPA_URL+'/rest/v1/usuarios?email=eq.'+encodeURIComponent(user), {
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY
+      }
+    }).then(function(r){return r.json();}).then(function(rows){
+      if(btn){btn.textContent='⚡ INGRESAR';btn.disabled=false;}
+
+      if(!rows || rows.length === 0){
+        errEl.textContent='Tu cuenta aún no está procesada. Espera unos minutos e intenta de nuevo.';
+        errEl.classList.add('show');
         return;
       }
-      loginWithUser(found);
+
+      var u = rows[0];
+
+      if(u.estado === 'pendiente'){
+        errEl.textContent='Tu cuenta está pendiente de aprobación. El administrador activará tu acceso pronto.';
+        errEl.classList.add('show');
+        return;
+      }
+      if(u.estado === 'rechazado'){
+        errEl.textContent='Tu solicitud fue rechazada. Contacta al administrador.';
+        errEl.classList.add('show');
+        return;
+      }
+      if(u.estado === 'suspendido' || u.estado === 'pausado'){
+        errEl.textContent='Tu cuenta no está activa. Contacta al administrador.';
+        errEl.classList.add('show');
+        return;
+      }
+
+      // SUCCESS
+      currentUser = {
+        name: u.nombre,
+        role: 'MIEMBRO · PLAN ' + (u.plan || ''),
+        isAdmin: false,
+        isDev: false,
+        initial: (u.nombre || 'U')[0].toUpperCase(),
+        plan: u.plan || '',
+        vence: u.vence || ''
+      };
+      closeModal('loginModal');
+      document.body.style.overflow='';
+      enterPanel();
     });
-  }).catch(function(){
+  }).catch(function(e){
     if(btn){btn.textContent='⚡ INGRESAR';btn.disabled=false;}
-    errEl.textContent='Error de conexión. Verifica tu internet.';errEl.classList.add('show');
+    console.error('Login error:', e);
+    errEl.textContent='Error de conexión. Verifica tu internet.';
+    errEl.classList.add('show');
   });
 }
 
@@ -4745,7 +4875,7 @@ var _origEP_t17=enterPanel;enterPanel=function(){_origEP_t17();setTimeout(dashRe
 
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t25</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t26</div>
 </body>
 </html>function aregRenderProcesados2() {
   var cont = document.getElementById('areg-procesados-lista');
@@ -7312,6 +7442,6 @@ var _origEP_t17=enterPanel;enterPanel=function(){_origEP_t17();setTimeout(dashRe
 
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t25</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t26</div>
 </body>
 </html>
