@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t19</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<title>Titanium Traders · t20</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg0: #020810;
@@ -31,7 +33,7 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
-body{font-family:'Rajdhani',sans-serif;background:var(--bg0);color:var(--white);overflow-x:hidden;}
+body{font-family:'Inter',sans-serif;background:var(--bg0);color:var(--white);overflow-x:hidden;}
 
 /* ══════════════════════════════════════════
    GLOBAL BG
@@ -95,7 +97,7 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg0);color:var(--white);
 .wnav-links a:hover{color:var(--blue);}
 .wnav-links a:hover::after{width:100%;}
 .wnav-right{display:flex;align-items:center;gap:14px;}
-.dt-box{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--blue);text-align:right;line-height:1.7;letter-spacing:1px;}
+.dt-box{font-family:'Inter',sans-serif;font-size:10px;color:var(--blue);text-align:right;line-height:1.7;letter-spacing:1px;}
 .btn-wnav-login{
   padding:8px 22px;background:transparent;border:1px solid var(--blue);
   color:var(--blue);font-family:'Orbitron',sans-serif;font-size:10px;
@@ -335,7 +337,7 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg0);color:var(--white);
 .pnav-page-title{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;color:var(--white);}
 .pnav-page-sub{font-size:11px;color:var(--muted);letter-spacing:1px;}
 .pnav-right{display:flex;align-items:center;gap:20px;}
-.pnav-dt{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--blue);text-align:right;line-height:1.7;letter-spacing:1px;}
+.pnav-dt{font-family:'Inter',sans-serif;font-size:10px;color:var(--blue);text-align:right;line-height:1.7;letter-spacing:1px;}
 .pnav-notif{
   width:34px;height:34px;border-radius:50%;background:var(--bg3);
   border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
@@ -572,6 +574,28 @@ textarea.pform-input{resize:vertical;min-height:90px;}
 .cal-day-num{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;margin-bottom:4px;}
 .cal-day-pnl{font-size:10px;font-weight:600;}
 .cal-week-total{background:var(--bg3);border:1px solid var(--border2);padding:6px 10px;font-family:'Orbitron',sans-serif;font-size:9px;text-align:right;grid-column:span 7;}
+
+
+  /* ── MODERN TYPOGRAPHY OVERRIDE ── */
+  body, input, textarea, select, button {
+    font-family: 'Inter', sans-serif !important;
+  }
+  .mod-sub, .mod-title, p, li, td, th, label, span:not([style*="Orbitron"]) {
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0 !important;
+  }
+  .sitem-label { font-family: 'Inter', sans-serif !important; font-size: 13px !important; letter-spacing: 0 !important; }
+  .pform-label { font-family: 'Inter', sans-serif !important; letter-spacing: 0 !important; font-size: 12px !important; }
+  .pform-input { font-family: 'Inter', sans-serif !important; }
+  .content-card p, .content-card div:not([style*="Orbitron"]) { font-family: 'Inter', sans-serif; }
+  h3 { font-family: 'Poppins', sans-serif !important; font-weight: 600 !important; letter-spacing: 0 !important; }
+  .feed-card, .content-card { font-family: 'Inter', sans-serif; }
+  .btn-action { font-family: 'Inter', sans-serif !important; letter-spacing: 0.5px !important; }
+  .badge { font-family: 'Inter', sans-serif !important; letter-spacing: 0 !important; }
+  .stat-card-lbl { font-family: 'Inter', sans-serif !important; letter-spacing: 0.5px !important; font-size: 11px !important; }
+  .modal-box { font-family: 'Inter', sans-serif !important; }
+  /* Keep Orbitron only for titles and key numbers */
+  .mod-title, .stat-card-val, .plan-nm, .plan-pr-amt { font-family: 'Orbitron', sans-serif !important; }
 
 </style>
 </head>
@@ -1270,7 +1294,7 @@ textarea.pform-input{resize:vertical;min-height:90px;}
       <div class="content-card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
           <div style="font-size:13px;color:var(--light);">💬 Todos los miembros pueden escribir aquí</div>
-          <div style="display:flex;align-items:center;gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:#00c864;"></div><span style="font-size:11px;color:#00c864;font-family:'Share Tech Mono',monospace;">EN LÍNEA</span></div>
+          <div style="display:flex;align-items:center;gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:#00c864;"></div><span style="font-size:11px;color:#00c864;font-family:'Inter',sans-serif;">EN LÍNEA</span></div>
         </div>
         <div class="chat-container" id="chat-vivo-messages" style="height:420px;"></div>
         <div class="chat-input-row" style="margin-top:12px;">
@@ -2454,7 +2478,7 @@ function renderSenalesUsuario(){
         </div>
         ${s.nota?`<div style="font-size:12px;color:var(--light);line-height:1.6;margin-bottom:8px;">${s.nota}</div>`:''}
         ${s.img?`<img src="${s.img}" style="width:100%;border-radius:2px;margin-bottom:8px;max-height:150px;object-fit:cover;">`:''}
-        <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;">${s.fecha} · ${s.hora} · ${s.plan}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;">${s.fecha} · ${s.hora} · ${s.plan}</div>
       </div>`).join('')+'</div>';
 }
 
@@ -2518,7 +2542,7 @@ function renderNotas() {
     <div style="background:var(--bg3);border:1px solid var(--border);padding:20px;border-top:3px solid var(--blue);position:relative;">
       <div style="font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;margin-bottom:6px;padding-right:30px;">${n.titulo}</div>
       <div style="font-size:13px;color:var(--light);line-height:1.7;white-space:pre-wrap;margin-bottom:10px;">${n.contenido}</div>
-      <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;">${n.fecha} · ${n.hora}</div>
+      <div style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;">${n.fecha} · ${n.hora}</div>
       <button class="btn-action sm red" style="position:absolute;top:12px;right:12px;" onclick="eliminarNota(${n.id})">🗑️</button>
     </div>`).join('');
 }
@@ -2567,7 +2591,7 @@ function renderEmociones() {
       <div style="font-size:32px;margin-bottom:8px;">${e.emoji}</div>
       <div style="font-family:'Orbitron',sans-serif;font-size:11px;color:var(--blue);letter-spacing:1px;margin-bottom:6px;">${e.label}</div>
       ${e.texto?`<div style="font-size:13px;color:var(--light);line-height:1.7;white-space:pre-wrap;margin-bottom:10px;">${e.texto}</div>`:''}
-      <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;">${e.fecha} · ${e.hora}</div>
+      <div style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;">${e.fecha} · ${e.hora}</div>
       <button class="btn-action sm red" style="position:absolute;top:12px;right:12px;" onclick="eliminarEmocion(${e.id})">🗑️</button>
     </div>`).join('');
 }
@@ -2600,7 +2624,7 @@ function renderResultados() {
     <div style="background:var(--bg3);border:1px solid var(--border);padding:20px;margin-bottom:14px;border-left:3px solid #00c864;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <div style="font-family:'Orbitron',sans-serif;font-size:11px;color:#00c864;letter-spacing:1px;">📊 ${r.autor}</div>
-        <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;">${r.fecha} · ${r.hora}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;">${r.fecha} · ${r.hora}</div>
       </div>
       <div style="font-size:14px;color:var(--light);line-height:1.7;white-space:pre-wrap;">${r.desc}</div>
     </div>`).join('');
@@ -2636,7 +2660,7 @@ function renderPubRetiros() {
     <div style="background:var(--bg3);border:1px solid var(--border);padding:20px;margin-bottom:14px;border-left:3px solid var(--gold);">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <div style="font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:var(--gold);">💸 $${r.monto}</div>
-        <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;">${r.fecha} · ${r.hora}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;">${r.fecha} · ${r.hora}</div>
       </div>
       <div style="font-size:11px;color:var(--blue);font-family:'Orbitron',sans-serif;letter-spacing:1px;margin-bottom:6px;">${r.autor}</div>
       ${r.comentario?`<div style="font-size:13px;color:var(--light);line-height:1.7;">${r.comentario}</div>`:''}
@@ -2772,7 +2796,7 @@ function renderOperaciones(filtro) {
         <th>RESULTADO</th><th>EMOCIÓN</th><th>ACCIONES</th>
       </tr>
       ${ops.map(o => `<tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:10px 8px;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:10px;">${o.fecha||'—'}</td>
+        <td style="padding:10px 8px;color:var(--muted);font-family:'Inter',sans-serif;font-size:10px;">${o.fecha||'—'}</td>
         <td style="padding:8px;font-family:'Orbitron',sans-serif;font-weight:700;text-align:center;">${o.simbolo}</td>
         <td style="text-align:center;color:${(o.dir||'').includes('BUY')?'#00c864':'#ff6b6b'};font-weight:700;">${o.dir}</td>
         <td style="text-align:center;color:var(--light);">${o.lote||'—'}</td>
@@ -2859,7 +2883,7 @@ function renderRetirosCuenta() {
     <div style="background:var(--bg3);border:1px solid var(--border);padding:20px;border-left:3px solid var(--gold);">
       <div style="font-family:'Orbitron',sans-serif;font-size:18px;font-weight:700;color:var(--gold);">$${r.monto}</div>
       <div style="font-size:11px;color:var(--muted);margin-top:4px;">${r.metodo}</div>
-      <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-top:4px;">${r.fecha||r.fechaReg} ${r.ref?'· Ref: '+r.ref:''}</div>
+      <div style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;margin-top:4px;">${r.fecha||r.fechaReg} ${r.ref?'· Ref: '+r.ref:''}</div>
     </div>`).join('');
 }
 
@@ -2944,7 +2968,7 @@ function renderComunidad() {
           <div style="font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;">${p.titulo}</div>
           <div style="font-size:10px;color:var(--blue);margin-top:3px;">${p.categoria} · ${p.autor}</div>
         </div>
-        <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;">${p.fecha} · ${p.hora}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;">${p.fecha} · ${p.hora}</div>
       </div>
       <div style="font-size:13px;color:var(--light);line-height:1.7;white-space:pre-wrap;">${p.contenido}</div>
     </div>`).join('');
@@ -4540,46 +4564,44 @@ async function ausrAprobarEnSupabase(userId) {
 
 // ── APROBACIÓN DE REGISTROS — reads real data ──
 function renderAregistros() {
-  var cont = document.getElementById('areg-pendientes-lista'); if(!cont) return;
+  var cont = document.getElementById('areg-pendientes-lista');
+  if(!cont) return;
+  // Clear completely first
+  cont.innerHTML = '';
   var usuarios = lsGet('usuarios') || [];
   var pendientes = usuarios.filter(function(u){ return u.estado === 'pendiente'; });
   if(!pendientes.length) {
     cont.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);">Sin solicitudes pendientes ✅</div>';
     return;
   }
-  var planColors = {Básico:'#4FC3F7',Prop:'var(--silver)',VIP:'var(--gold)'};
-  var cards = '';
+  var planColors = {'Básico':'#4FC3F7','Prop':'var(--silver)','VIP':'var(--gold)'};
   pendientes.forEach(function(u) {
     var planC = planColors[u.plan] || 'var(--blue)';
     var card = document.createElement('div');
-    card.className = 'areg-card';
-    card.setAttribute('data-id', u.id);
-    card.style.cssText = 'background:var(--bg2);padding:16px;border-left:3px solid var(--gold);margin-bottom:8px;';
+    card.style.cssText = 'background:var(--bg2);padding:16px;border-left:3px solid var(--gold);margin-bottom:12px;border-radius:2px;';
     card.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">'
       + '<div>'
       + '<div style="font-family:Orbitron,sans-serif;font-size:13px;font-weight:700;margin-bottom:4px;">' + (u.nombre||'—') + '</div>'
-      + '<div style="font-size:11px;color:var(--muted);">' + (u.email||'—') + ' · ' + (u.pais||'—') + '</div>'
-      + '<div style="font-size:11px;color:' + planC + ';margin-top:4px;font-family:Orbitron,sans-serif;">Plan: ' + u.plan + ' · ' + (u.inicio||'—') + '</div>'
-      + (u.notasAdmin ? '<div style="font-size:10px;color:var(--muted);margin-top:4px;">' + u.notasAdmin + '</div>' : '')
+      + '<div style="font-size:12px;color:var(--muted);">' + (u.email||'—') + ' · ' + (u.pais||'—') + '</div>'
+      + '<div style="font-size:12px;color:' + planC + ';margin-top:4px;">Plan: ' + (u.plan||'—') + ' · ' + (u.inicio||'—') + '</div>'
+      + (u.notasAdmin ? '<div style="font-size:11px;color:var(--muted);margin-top:4px;">' + u.notasAdmin + '</div>' : '')
       + '</div>'
       + '<span class="badge badge-gold">PENDIENTE</span>'
       + '</div>'
-      + '<div style="display:flex;gap:8px;" id="areg-btns-' + u.id + '"></div>';
+      + '<div id="btns-' + u.id + '" style="display:flex;gap:8px;"></div>';
     cont.appendChild(card);
-    // Add buttons safely via JS (no inline onclick with quotes)
-    var btnCont = document.getElementById('areg-btns-' + u.id);
+    var btnCont = document.getElementById('btns-' + u.id);
     var btnAp = document.createElement('button');
     btnAp.className = 'btn-action sm green';
     btnAp.style.flex = '1';
     btnAp.textContent = '✅ Aprobar';
-    btnAp.onclick = (function(uid, unombre, uplan){ return function(){ aregAprobar2(uid, unombre, uplan); }; })(u.id, u.nombre, u.plan);
+    btnAp.onclick = (function(uid,unombre,uplan){ return function(){ aregAprobar2(uid,unombre,uplan); }; })(u.id, u.nombre, u.plan);
     var btnRe = document.createElement('button');
     btnRe.className = 'btn-action sm red';
     btnRe.style.flex = '1';
     btnRe.textContent = '❌ Rechazar';
     btnRe.onclick = (function(uid){ return function(){ aregRechazar2(uid); }; })(u.id);
-    btnCont.appendChild(btnAp);
-    btnCont.appendChild(btnRe);
+    if(btnCont){ btnCont.appendChild(btnAp); btnCont.appendChild(btnRe); }
   });
 }
 
@@ -4616,23 +4638,43 @@ function aregRechazar2(id) {
 }
 
 function aregRenderProcesados2() {
-  var cont = document.getElementById('areg-procesados-lista'); if(!cont) return;
+  var cont = document.getElementById('areg-procesados-lista');
+  if(!cont) return;
+  cont.innerHTML = '';
   var usuarios = lsGet('usuarios') || [];
   var procesados = usuarios.filter(function(u){ return u.estado==='activo'||u.estado==='rechazado'; });
   if(!procesados.length) {
-    cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);">Sin registros procesados</div>';
+    cont.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);">Sin registros procesados</div>';
     return;
   }
-  cont.innerHTML = procesados.map(function(u) {
-    var color = u.estado==='activo'?'#00c864':'#ff6b6b';
-    var badge = u.estado==='activo'?'badge-green':'badge-red';
-    return '<div style="padding:12px;background:var(--bg2);border-left:3px solid '+color+';margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">'
-      +'<div><div style="font-size:13px;font-weight:600;color:var(--white);">'+u.nombre+'</div>'
-      +'<div style="font-size:11px;color:var(--muted);">'+(u.email||'—')+' · Plan '+u.plan+'</div></div>'
-      +'<span class="badge '+badge+'">'+u.estado.toUpperCase()+'</span>'
-      +'</div>';
-  }).join('');
+  procesados.forEach(function(u) {
+    var color = u.estado==='activo' ? '#00c864' : '#ff6b6b';
+    var badge = u.estado==='activo' ? 'badge-green' : 'badge-red';
+    var row = document.createElement('div');
+    row.style.cssText = 'padding:12px;background:var(--bg2);border-left:3px solid '+color+';margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;';
+    row.innerHTML = '<div>'
+      + '<div style="font-size:13px;font-weight:600;color:var(--white);">' + (u.nombre||'—') + '</div>'
+      + '<div style="font-size:11px;color:var(--muted);">' + (u.email||'—') + ' · Plan ' + (u.plan||'—') + '</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:6px;align-items:center;">'
+      + '<span class="badge ' + badge + '">' + u.estado.toUpperCase() + '</span>'
+      + '</div>';
+    // Add delete button
+    var btnEl = document.createElement('button');
+    btnEl.className = 'btn-action sm red';
+    btnEl.textContent = '🗑️';
+    btnEl.title = 'Eliminar registro';
+    btnEl.onclick = (function(uid){ return function(){
+      if(!confirm('¿Eliminar este registro del historial?')) return;
+      var users = lsGet('usuarios') || [];
+      lsSet('usuarios', users.filter(function(x){ return x.id !== uid; }));
+      aregRenderProcesados2();
+    }; })(u.id);
+    row.querySelector('div:last-child').appendChild(btnEl);
+    cont.appendChild(row);
+  });
 }
+
 
 // Update badge for aregistros
 function updateAregBadge() {
@@ -4649,12 +4691,12 @@ function updateAregBadge() {
 
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t19</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Inter',sans-serif;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t20</div>
 
 <div style="position:fixed;bottom:0;left:0;right:0;z-index:999;background:rgba(2,8,16,0.95);border-top:1px solid rgba(0,191,255,0.15);padding:6px 20px;display:flex;align-items:center;justify-content:center;gap:16px;">
-  <span style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;">Elaborado por <span style="color:var(--blue);">Daniel Pérez</span></span>
+  <span style="font-size:11px;color:var(--muted);font-family:'Inter',sans-serif;">Elaborado por <span style="color:var(--blue);">Daniel Pérez</span></span>
   <span style="color:var(--border);">·</span>
-  <a href="https://instagram.com/danielbeis15" target="_blank" style="font-size:11px;color:var(--muted);text-decoration:none;font-family:'Share Tech Mono',monospace;">📸 Instagram: <span style="color:var(--blue);">@danielbeis15</span></a>
+  <a href="https://instagram.com/danielbeis15" target="_blank" style="font-size:11px;color:var(--muted);text-decoration:none;font-family:'Inter',sans-serif;">📸 Instagram: <span style="color:var(--blue);">@danielbeis15</span></a>
 </div>
 
 </body>
