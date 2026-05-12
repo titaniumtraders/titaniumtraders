@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t16</title>
+<title>Titanium Traders · t18</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -421,7 +421,7 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg0);color:var(--white);
 .sidebar-tt-tag{color:var(--muted);letter-spacing:1px;font-size:8px;}
 
 /* PANEL CONTENT */
-.panel-content{
+.panel-content{padding-bottom:44px!important;
   margin-top:var(--navbar-h);
   margin-left:var(--sidebar-w);
   min-height:calc(100vh - var(--navbar-h));
@@ -533,7 +533,7 @@ textarea.pform-input{resize:vertical;min-height:90px;}
   :root{--sidebar-w:0px;}
   .sidebar{transform:translateX(-100%);}
   .pnav{padding-left:24px;}
-  .panel-content{margin-left:0;}
+  .panel-content{padding-bottom:44px!important;margin-left:0;}
   .cards-4,.cards-3,.cards-2{grid-template-columns:1fr;}
   .pform-row{grid-template-columns:1fr;}
   .wsec{padding:60px 20px;}
@@ -1633,45 +1633,19 @@ textarea.pform-input{resize:vertical;min-height:90px;}
         <div class="content-card">
           <h3>⏳ Solicitudes Pendientes</h3>
           <div id="areg-pendientes-lista" style="display:flex;flex-direction:column;gap:12px;">
-            <!-- Sample pending registrations -->
-            <div class="areg-card" data-id="reg1" style="background:var(--bg2);padding:16px;border-left:3px solid var(--gold);">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
-                <div>
-                  <div style="font-family:Orbitron,sans-serif;font-size:13px;font-weight:700;margin-bottom:4px;">Carlos Rodríguez</div>
-                  <div style="font-size:11px;color:var(--muted);">carlos.r@email.com · 🇨🇴 Colombia</div>
-                  <div style="font-size:11px;color:var(--blue);margin-top:4px;">Plan: Prop · 10/05/2026</div>
-                </div>
-                <span class="badge badge-gold">PENDIENTE</span>
-              </div>
-              <div style="display:flex;gap:8px;">
-                <button class="btn-action sm green" style="flex:1;" onclick="aregAprobar('reg1','Carlos Rodríguez','Prop')">✅ Aprobar</button>
-                <button class="btn-action sm red" style="flex:1;" onclick="aregRechazar('reg1')">❌ Rechazar</button>
-              </div>
-            </div>
-            <div class="areg-card" data-id="reg2" style="background:var(--bg2);padding:16px;border-left:3px solid var(--gold);">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
-                <div>
-                  <div style="font-family:Orbitron,sans-serif;font-size:13px;font-weight:700;margin-bottom:4px;">Ana Martínez</div>
-                  <div style="font-size:11px;color:var(--muted);">ana.m@email.com · 🇻🇪 Venezuela</div>
-                  <div style="font-size:11px;color:var(--gold);margin-top:4px;">Plan: VIP · 10/05/2026</div>
-                </div>
-                <span class="badge badge-gold">PENDIENTE</span>
-              </div>
-              <div style="display:flex;gap:8px;">
-                <button class="btn-action sm green" style="flex:1;" onclick="aregAprobar('reg2','Ana Martínez','VIP')">✅ Aprobar</button>
-                <button class="btn-action sm red" style="flex:1;" onclick="aregRechazar('reg2')">❌ Rechazar</button>
-              </div>
-            </div>
+            <div style="text-align:center;padding:30px;color:var(--muted);">Sin solicitudes pendientes</div>
           </div>
         </div>
         <div class="content-card">
           <h3>✅ Registros Procesados</h3>
-          <div id="areg-procesados-lista"><div style="text-align:center;padding:30px;color:var(--muted);">Sin registros procesados</div></div>
+          <div id="areg-procesados-lista" style="display:flex;flex-direction:column;gap:10px;">
+            <div style="text-align:center;padding:30px;color:var(--muted);">Sin registros procesados</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="module" id="mod-asenales">
+    <div class="module" id="mod-asenales"><div class="module" id="mod-asenales">
       <div class="mod-header">
         <div class="mod-title">📡 GESTIÓN DE SEÑALES</div>
         <div class="mod-sub">Publicar y gestionar señales de trading</div>
@@ -4406,8 +4380,8 @@ function handleRegister(){
   var usuarios=lsGet('usuarios')||[];usuarios.push(nu);lsSet('usuarios',usuarios);
   var pago={id:Date.now(),usuario:nombre.trim(),monto:parseFloat(monto),metodo:metodo,ref:ref,comprobante:regCompData||'',estado:'Pendiente',fecha:fecha};
   var comps=lsGet('fin_comprobantes')||[];comps.unshift(pago);lsSet('fin_comprobantes',comps);
-  if(typeof dbPushUsuario==='function')dbPushUsuario(nu);
-  if(typeof dbPushPago==='function')dbPushPago(pago);
+  // Register with Supabase Auth (sends confirmation email)
+  supaAuthSignup(email.trim(), password, nombre.trim(), regPlanSel, pais.trim(), metodo, monto, ref, regCompData||'');
   var s=document.getElementById('regSuccess');if(s)s.style.display='block';
   ['reg-nombre','reg-pais','reg-email','reg-password','reg-monto','reg-referencia'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   var rl=document.getElementById('reg-comp-label');if(rl)rl.textContent='Clic para subir comprobante';
@@ -4429,11 +4403,218 @@ function dashRender(){
   var anuncios=lsGet('anuncios')||[];if(el('dash-anuncios-lista')){if(!anuncios.length){el('dash-anuncios-lista').innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px;">Sin anuncios</div>';}else{el('dash-anuncios-lista').innerHTML=anuncios.slice(0,3).map(function(a){return'<div style="padding:12px;background:var(--bg2);border-left:2px solid var(--blue);margin-bottom:8px;"><div style="font-size:12px;color:var(--white);font-weight:600;margin-bottom:4px;">'+(a.tipo||'')+' — '+(a.titulo||'')+'</div><div style="font-size:12px;color:var(--muted);">'+(a.msg||'').substring(0,80)+'</div><div style="font-size:10px;color:var(--muted);margin-top:4px;font-family:monospace;">'+(a.fecha||'')+'</div></div>';}).join('');}}
   if(el('dash-bienvenida')&&p.name)el('dash-bienvenida').textContent='Bienvenido de vuelta, '+p.name+'. Tu resumen del día.';
 }
-var _origShow_t17=showModule;showModule=function(id,title,sub){_origShow_t17(id,title,sub);if(id==='dashboard')setTimeout(dashRender,80);if(id==='adashboard')setTimeout(function(){if(typeof adashRender==='function')adashRender();},80);};
-var _origEP_t17=enterPanel;enterPanel=function(){_origEP_t17();setTimeout(dashRender,200);if(typeof syncFromSupabase==='function'){syncFromSupabase().then(function(){dashRender();if(typeof navUpdateBadges==='function')navUpdateBadges();});}};
+var _origShow_t17=showModule;showModule=function(id,title,sub){_origShow_t17(id,title,sub);if(id==='dashboard')setTimeout(dashRender,80);if(id==='adashboard')setTimeout(function(){if(typeof adashRender==='function')adashRender();},80);if(id==='aregistros')setTimeout(function(){renderAregistros();aregRenderProcesados2();updateAregBadge();},80);};
+var _origEP_t17=enterPanel;enterPanel=function(){_origEP_t17();setTimeout(dashRender,200);setTimeout(updateAregBadge,300);if(typeof syncFromSupabase==='function'){syncFromSupabase().then(function(){dashRender();if(typeof navUpdateBadges==='function')navUpdateBadges();});}};
+
+
+// ══════════════════════════════════════════
+// SUPABASE AUTH INTEGRATION
+// ══════════════════════════════════════════
+async function supaAuthSignup(email, password, nombre, plan, pais, metodo, monto, ref, comprobante) {
+  try {
+    // 1. Create auth user in Supabase (sends confirmation email automatically)
+    const res = await fetch(SUPA_URL + '/auth/v1/signup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPA_KEY
+      },
+      body: JSON.stringify({ email: email, password: password })
+    });
+    const data = await res.json();
+
+    if(data.error || data.msg) {
+      console.warn('Supabase Auth error:', data.error || data.msg);
+      // Still save locally even if auth fails
+    } else {
+      console.log('✅ Supabase Auth user created:', data.user?.id);
+    }
+
+    // 2. Save user data to usuarios table
+    var nu = {
+      id: data.user?.id || ('usr_'+Date.now()),
+      nombre: nombre,
+      alias: '',
+      email: email,
+      pais: pais,
+      plan: plan,
+      estado: 'pendiente',
+      inicio: new Date().toISOString().split('T')[0],
+      vence: '',
+      notas_admin: 'Monto: $'+monto+' | Método: '+metodo+' | Ref: '+ref
+    };
+    await dbInsert('usuarios', nu);
+
+    // 3. Save payment
+    var pago = {
+      usuario: nombre,
+      monto: parseFloat(monto),
+      metodo: metodo,
+      referencia: ref,
+      comprobante: comprobante,
+      estado: 'Pendiente',
+      fecha: new Date().toLocaleDateString('es-CO')
+    };
+    await dbInsert('pagos', pago);
+
+    // 4. Also save to localStorage
+    var usuarios = lsGet('usuarios') || [];
+    usuarios.push({id:nu.id,nombre:nombre,alias:'',email:email,pais:pais,plan:plan,estado:'pendiente',inicio:nu.inicio,vence:'',notasAdmin:nu.notas_admin});
+    lsSet('usuarios', usuarios);
+    var comps = lsGet('fin_comprobantes') || [];
+    comps.unshift({id:Date.now(),usuario:nombre,monto:parseFloat(monto),metodo:metodo,ref:ref,comprobante:comprobante,estado:'Pendiente',fecha:pago.fecha});
+    lsSet('fin_comprobantes', comps);
+
+    console.log('✅ Registration complete');
+  } catch(e) {
+    console.error('Registration error:', e);
+  }
+}
+
+// Supabase Auth Login
+async function supaAuthLogin(email, password) {
+  try {
+    const res = await fetch(SUPA_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPA_KEY
+      },
+      body: JSON.stringify({ email: email, password: password })
+    });
+    const data = await res.json();
+    if(data.error || data.msg) return null;
+    return data;
+  } catch(e) {
+    return null;
+  }
+}
+
+// Approve user — update estado in Supabase
+async function ausrAprobarEnSupabase(userId) {
+  try {
+    await dbUpdate('usuarios', userId, {estado: 'activo'});
+  } catch(e) { console.warn('Supabase update failed:', e); }
+}
+
+
+// ── APROBACIÓN DE REGISTROS — reads real data ──
+function renderAregistros() {
+  var cont = document.getElementById('areg-pendientes-lista'); if(!cont) return;
+  var usuarios = lsGet('usuarios') || [];
+  var pendientes = usuarios.filter(function(u){ return u.estado === 'pendiente'; });
+  if(!pendientes.length) {
+    cont.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);">Sin solicitudes pendientes ✅</div>';
+    return;
+  }
+  var planColors = {Básico:'#4FC3F7',Prop:'var(--silver)',VIP:'var(--gold)'};
+  var cards = '';
+  pendientes.forEach(function(u) {
+    var planC = planColors[u.plan] || 'var(--blue)';
+    var card = document.createElement('div');
+    card.className = 'areg-card';
+    card.setAttribute('data-id', u.id);
+    card.style.cssText = 'background:var(--bg2);padding:16px;border-left:3px solid var(--gold);margin-bottom:8px;';
+    card.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">'
+      + '<div>'
+      + '<div style="font-family:Orbitron,sans-serif;font-size:13px;font-weight:700;margin-bottom:4px;">' + (u.nombre||'—') + '</div>'
+      + '<div style="font-size:11px;color:var(--muted);">' + (u.email||'—') + ' · ' + (u.pais||'—') + '</div>'
+      + '<div style="font-size:11px;color:' + planC + ';margin-top:4px;font-family:Orbitron,sans-serif;">Plan: ' + u.plan + ' · ' + (u.inicio||'—') + '</div>'
+      + (u.notasAdmin ? '<div style="font-size:10px;color:var(--muted);margin-top:4px;">' + u.notasAdmin + '</div>' : '')
+      + '</div>'
+      + '<span class="badge badge-gold">PENDIENTE</span>'
+      + '</div>'
+      + '<div style="display:flex;gap:8px;" id="areg-btns-' + u.id + '"></div>';
+    cont.appendChild(card);
+    // Add buttons safely via JS (no inline onclick with quotes)
+    var btnCont = document.getElementById('areg-btns-' + u.id);
+    var btnAp = document.createElement('button');
+    btnAp.className = 'btn-action sm green';
+    btnAp.style.flex = '1';
+    btnAp.textContent = '✅ Aprobar';
+    btnAp.onclick = (function(uid, unombre, uplan){ return function(){ aregAprobar2(uid, unombre, uplan); }; })(u.id, u.nombre, u.plan);
+    var btnRe = document.createElement('button');
+    btnRe.className = 'btn-action sm red';
+    btnRe.style.flex = '1';
+    btnRe.textContent = '❌ Rechazar';
+    btnRe.onclick = (function(uid){ return function(){ aregRechazar2(uid); }; })(u.id);
+    btnCont.appendChild(btnAp);
+    btnCont.appendChild(btnRe);
+  });
+}
+
+
+function aregAprobar2(id, nombre, plan) {
+  var usuarios = lsGet('usuarios') || [];
+  var idx = usuarios.findIndex(function(u){ return u.id === id; });
+  if(idx > -1) {
+    usuarios[idx].estado = 'activo';
+    lsSet('usuarios', usuarios);
+    // Update in Supabase
+    if(typeof dbUpdate === 'function') dbUpdate('usuarios', id, {estado:'activo'});
+    renderAregistros();
+    aregRenderProcesados2();
+    // Update badge
+    var badge = document.querySelector('[onclick*="aregistros"] .sitem-badge');
+    var pend = usuarios.filter(function(u){return u.estado==='pendiente';}).length;
+    if(badge) { badge.textContent=pend; badge.style.display=pend>0?'flex':'none'; }
+  }
+}
+
+function aregRechazar2(id) {
+  if(!confirm('¿Rechazar este registro?')) return;
+  var usuarios = lsGet('usuarios') || [];
+  var idx = usuarios.findIndex(function(u){ return u.id === id; });
+  if(idx > -1) {
+    usuarios[idx].estado = 'rechazado';
+    lsSet('usuarios', usuarios);
+    if(typeof dbUpdate === 'function') dbUpdate('usuarios', id, {estado:'rechazado'});
+    renderAregistros();
+    aregRenderProcesados2();
+  }
+}
+
+function aregRenderProcesados2() {
+  var cont = document.getElementById('areg-procesados-lista'); if(!cont) return;
+  var usuarios = lsGet('usuarios') || [];
+  var procesados = usuarios.filter(function(u){ return u.estado==='activo'||u.estado==='rechazado'; });
+  if(!procesados.length) {
+    cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);">Sin registros procesados</div>';
+    return;
+  }
+  cont.innerHTML = procesados.map(function(u) {
+    var color = u.estado==='activo'?'#00c864':'#ff6b6b';
+    var badge = u.estado==='activo'?'badge-green':'badge-red';
+    return '<div style="padding:12px;background:var(--bg2);border-left:3px solid '+color+';margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">'
+      +'<div><div style="font-size:13px;font-weight:600;color:var(--white);">'+u.nombre+'</div>'
+      +'<div style="font-size:11px;color:var(--muted);">'+(u.email||'—')+' · Plan '+u.plan+'</div></div>'
+      +'<span class="badge '+badge+'">'+u.estado.toUpperCase()+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+// Update badge for aregistros
+function updateAregBadge() {
+  var usuarios = lsGet('usuarios') || [];
+  var pend = usuarios.filter(function(u){return u.estado==='pendiente';}).length;
+  var badges = document.querySelectorAll('.sitem-badge');
+  badges.forEach(function(b) {
+    if(b.closest('[onclick*="aregistros"]')) {
+      b.textContent = pend;
+      b.style.display = pend > 0 ? 'flex' : 'none';
+    }
+  });
+}
 
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t16</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t18</div>
+
+<div style="position:fixed;bottom:0;left:0;right:0;z-index:999;background:rgba(2,8,16,0.95);border-top:1px solid rgba(0,191,255,0.15);padding:6px 20px;display:flex;align-items:center;justify-content:center;gap:16px;">
+  <span style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;">Elaborado por <span style="color:var(--blue);">Daniel Pérez</span></span>
+  <span style="color:var(--border);">·</span>
+  <a href="https://instagram.com/danielbeis15" target="_blank" style="font-size:11px;color:var(--muted);text-decoration:none;font-family:'Share Tech Mono',monospace;">📸 Instagram: <span style="color:var(--blue);">@danielbeis15</span></a>
+</div>
+
 </body>
 </html>
