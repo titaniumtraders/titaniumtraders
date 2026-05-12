@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t18</title>
+<title>Titanium Traders · t19</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -4404,15 +4404,25 @@ function dashRender(){
   if(el('dash-bienvenida')&&p.name)el('dash-bienvenida').textContent='Bienvenido de vuelta, '+p.name+'. Tu resumen del día.';
 }
 var _origShow_t17=showModule;showModule=function(id,title,sub){_origShow_t17(id,title,sub);if(id==='dashboard')setTimeout(dashRender,80);if(id==='adashboard')setTimeout(function(){if(typeof adashRender==='function')adashRender();},80);if(id==='aregistros')setTimeout(function(){renderAregistros();aregRenderProcesados2();updateAregBadge();},80);};
-var _origEP_t17=enterPanel;enterPanel=function(){_origEP_t17();setTimeout(dashRender,200);setTimeout(updateAregBadge,300);if(typeof syncFromSupabase==='function'){syncFromSupabase().then(function(){dashRender();if(typeof navUpdateBadges==='function')navUpdateBadges();});}};
+var _origEP_t17=enterPanel;enterPanel=function(){_origEP_t17();setTimeout(dashRender,200);setTimeout(updateAregBadge,300);setTimeout(function(){if(typeof syncFromSupabase==='function')syncFromSupabase().then(function(){dashRender();updateAregBadge();if(typeof navUpdateBadges==='function')navUpdateBadges();});},500);if(typeof syncFromSupabase==='function'){syncFromSupabase().then(function(){dashRender();if(typeof navUpdateBadges==='function')navUpdateBadges();});}};
 
 
 // ══════════════════════════════════════════
 // SUPABASE AUTH INTEGRATION
 // ══════════════════════════════════════════
+
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0;
+    var v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 async function supaAuthSignup(email, password, nombre, plan, pais, metodo, monto, ref, comprobante) {
   try {
-    // 1. Create auth user in Supabase (sends confirmation email automatically)
+    var authUserId = null;
+
+    // 1. Create auth user in Supabase Auth
     const res = await fetch(SUPA_URL + '/auth/v1/signup', {
       method: 'POST',
       headers: {
@@ -4425,14 +4435,20 @@ async function supaAuthSignup(email, password, nombre, plan, pais, metodo, monto
 
     if(data.error || data.msg) {
       console.warn('Supabase Auth error:', data.error || data.msg);
-      // Still save locally even if auth fails
+      // Rate limit or other error - still save locally
+      authUserId = generateUUID();
+    } else if(data.user && data.user.id) {
+      authUserId = data.user.id; // Real UUID from Supabase Auth
+      console.log('✅ Supabase Auth user created:', authUserId);
     } else {
-      console.log('✅ Supabase Auth user created:', data.user?.id);
+      authUserId = generateUUID();
     }
 
-    // 2. Save user data to usuarios table
-    var nu = {
-      id: data.user?.id || ('usr_'+Date.now()),
+    var fecha = new Date().toLocaleDateString('es-CO');
+
+    // 2. Save user data to usuarios table with proper UUID
+    var nuRow = {
+      id: authUserId,
       nombre: nombre,
       alias: '',
       email: email,
@@ -4440,29 +4456,52 @@ async function supaAuthSignup(email, password, nombre, plan, pais, metodo, monto
       plan: plan,
       estado: 'pendiente',
       inicio: new Date().toISOString().split('T')[0],
-      vence: '',
-      notas_admin: 'Monto: $'+monto+' | Método: '+metodo+' | Ref: '+ref
+      vence: null,
+      notas_admin: 'Monto: $' + monto + ' | Método: ' + metodo + ' | Ref: ' + ref
     };
-    await dbInsert('usuarios', nu);
+    var insertRes = await dbInsert('usuarios', nuRow);
+    if(!insertRes) console.warn('Usuario insert failed');
 
     // 3. Save payment
-    var pago = {
+    var pagoRow = {
       usuario: nombre,
       monto: parseFloat(monto),
       metodo: metodo,
       referencia: ref,
-      comprobante: comprobante,
+      comprobante: comprobante || '',
       estado: 'Pendiente',
-      fecha: new Date().toLocaleDateString('es-CO')
+      fecha: fecha
     };
-    await dbInsert('pagos', pago);
+    await dbInsert('pagos', pagoRow);
 
-    // 4. Also save to localStorage
+    // 4. Save to localStorage
     var usuarios = lsGet('usuarios') || [];
-    usuarios.push({id:nu.id,nombre:nombre,alias:'',email:email,pais:pais,plan:plan,estado:'pendiente',inicio:nu.inicio,vence:'',notasAdmin:nu.notas_admin});
+    var localUser = {
+      id: authUserId,
+      nombre: nombre,
+      alias: '',
+      email: email,
+      pais: pais,
+      plan: plan,
+      estado: 'pendiente',
+      inicio: nuRow.inicio,
+      vence: '',
+      notasAdmin: nuRow.notas_admin
+    };
+    usuarios.push(localUser);
     lsSet('usuarios', usuarios);
+
     var comps = lsGet('fin_comprobantes') || [];
-    comps.unshift({id:Date.now(),usuario:nombre,monto:parseFloat(monto),metodo:metodo,ref:ref,comprobante:comprobante,estado:'Pendiente',fecha:pago.fecha});
+    comps.unshift({
+      id: authUserId,
+      usuario: nombre,
+      monto: parseFloat(monto),
+      metodo: metodo,
+      ref: ref,
+      comprobante: comprobante || '',
+      estado: 'Pendiente',
+      fecha: fecha
+    });
     lsSet('fin_comprobantes', comps);
 
     console.log('✅ Registration complete');
@@ -4470,6 +4509,7 @@ async function supaAuthSignup(email, password, nombre, plan, pais, metodo, monto
     console.error('Registration error:', e);
   }
 }
+
 
 // Supabase Auth Login
 async function supaAuthLogin(email, password) {
@@ -4552,6 +4592,7 @@ function aregAprobar2(id, nombre, plan) {
     lsSet('usuarios', usuarios);
     // Update in Supabase
     if(typeof dbUpdate === 'function') dbUpdate('usuarios', id, {estado:'activo'});
+    if(typeof dbUpdate === 'function') dbUpdate('pagos', null, {estado:'Aprobado'});
     renderAregistros();
     aregRenderProcesados2();
     // Update badge
@@ -4608,7 +4649,7 @@ function updateAregBadge() {
 
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t18</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t19</div>
 
 <div style="position:fixed;bottom:0;left:0;right:0;z-index:999;background:rgba(2,8,16,0.95);border-top:1px solid rgba(0,191,255,0.15);padding:6px 20px;display:flex;align-items:center;justify-content:center;gap:16px;">
   <span style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;">Elaborado por <span style="color:var(--blue);">Daniel Pérez</span></span>
