@@ -4681,20 +4681,6 @@ function notifMarcarTodas() {
 var regPlanSel=null,regCompData=null;
 function regSelPlan(card){document.querySelectorAll('.reg-plan-card').forEach(function(c){c.style.border='2px solid var(--border)';});card.style.border='2px solid var(--blue)';regPlanSel=card.getAttribute('data-plan');var m=document.getElementById('reg-monto');if(m)m.value=card.getAttribute('data-precio');}
 function regPreviewComp(input){if(!input.files||!input.files[0])return;var r=new FileReader();r.onload=function(e){regCompData=e.target.result;var l=document.getElementById('reg-comp-label');if(l)l.textContent='✅ '+input.files[0].name;};r.readAsDataURL(input.files[0]);}
-function handleLogin(){
-  var user=(document.getElementById('loginUser').value||'').trim().toLowerCase();
-  var errEl=document.getElementById('loginError');errEl.classList.remove('show');
-  if(!user){errEl.textContent='Ingresa tu usuario o email.';errEl.classList.add('show');return;}
-  if(user==='1739'){currentUser={name:'DEV · 1739',role:'PROGRAMADOR',isAdmin:true,isDev:true,initial:'⚙',plan:'',vence:''};closeModal('loginModal');document.body.style.overflow='';enterPanel();return;}
-  if(user==='administrador'){currentUser={name:'EMMANUEL OCAMPO',role:'ADMINISTRADOR',isAdmin:true,isDev:false,initial:'E',plan:'VIP',vence:''};closeModal('loginModal');document.body.style.overflow='';enterPanel();return;}
-  var usuarios=lsGet('usuarios')||[];
-  var found=usuarios.find(function(u){return (u.email||'').toLowerCase()===user||(u.nombre||'').toLowerCase()===user;});
-  if(!found){errEl.textContent='Usuario no encontrado.';errEl.classList.add('show');return;}
-  if(found.estado==='pendiente'){errEl.textContent='Cuenta pendiente de aprobación. Espera confirmación del administrador.';errEl.classList.add('show');return;}
-  if(found.estado==='suspendido'||found.estado==='pausado'){errEl.textContent='Tu cuenta no está activa. Contacta al administrador.';errEl.classList.add('show');return;}
-  currentUser={name:found.nombre,role:'MIEMBRO · PLAN '+(found.plan||''),isAdmin:false,isDev:false,initial:(found.nombre||'U')[0].toUpperCase(),plan:found.plan||'',vence:found.vence||''};
-  closeModal('loginModal');document.body.style.overflow='';enterPanel();
-}
 function handleRegister(){
   var nombre=(document.getElementById('reg-nombre')||{}).value||'';
   var pais=(document.getElementById('reg-pais')||{}).value||'';
