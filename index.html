@@ -47,7 +47,7 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t22</title>
+<title>Titanium Traders · t23</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -2135,11 +2135,22 @@ async function syncFromSupabase() {
         return {id:l.id,tipo:l.tipo,titulo:l.titulo,desc:l.descripcion,estado:l.estado,ytUrl:l.yt_url,zoomUrl:l.zoom_url,zoomPass:l.zoom_pass,fecha:l.fecha};
       }));
     }
-    // Usuarios
+    // Usuarios — ALWAYS sync from Supabase
     const usuarios = await dbGet('usuarios');
     if(usuarios && usuarios.length) {
       lsSet('usuarios', usuarios.map(function(u){
-        return {id:u.id,nombre:u.nombre,alias:u.alias||'',email:u.email||'',pais:u.pais||'',plan:u.plan||'Básico',estado:u.estado||'activo',inicio:u.inicio||'',vence:u.vence||'',notasAdmin:u.notas_admin||''};
+        return {
+          id:u.id,
+          nombre:u.nombre||'',
+          alias:u.alias||'',
+          email:u.email||'',
+          pais:u.pais||'',
+          plan:u.plan||'Básico',
+          estado:u.estado||'pendiente',
+          inicio:u.inicio||'',
+          vence:u.vence||'',
+          notasAdmin:u.notas_admin||''
+        };
       }));
     }
     // Pagos
@@ -2150,12 +2161,13 @@ async function syncFromSupabase() {
       }));
     }
     console.log('✅ Synced from Supabase');
-    // Re-render current module
-    if(typeof navUpdateBadges==='function') navUpdateBadges();
+    return true;
   } catch(e) {
     console.warn('Supabase sync failed, using localStorage:', e);
+    return false;
   }
 }
+
 
 // ── PUSH to Supabase helpers ──
 async function dbPushSenal(s) {
@@ -2718,8 +2730,52 @@ function dashRender(){
   var anuncios=lsGet('anuncios')||[];if(el('dash-anuncios-lista')){if(!anuncios.length){el('dash-anuncios-lista').innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px;">Sin anuncios</div>';}else{el('dash-anuncios-lista').innerHTML=anuncios.slice(0,3).map(function(a){return'<div style="padding:12px;background:var(--bg2);border-left:2px solid var(--blue);margin-bottom:8px;"><div style="font-size:12px;color:var(--white);font-weight:600;margin-bottom:4px;">'+(a.tipo||'')+' — '+(a.titulo||'')+'</div><div style="font-size:12px;color:var(--muted);">'+(a.msg||'').substring(0,80)+'</div><div style="font-size:10px;color:var(--muted);margin-top:4px;font-family:monospace;">'+(a.fecha||'')+'</div></div>';}).join('');}}
   if(el('dash-bienvenida')&&p.name)el('dash-bienvenida').textContent='Bienvenido de vuelta, '+p.name+'. Tu resumen del día.';
 }
-var _origShow_t17=showModule;showModule=function(id,title,sub){_origShow_t17(id,title,sub);if(id==='dashboard')setTimeout(dashRender,80);if(id==='adashboard')setTimeout(function(){if(typeof adashRender==='function')adashRender();},80);if(id==='aregistros')setTimeout(function(){renderAregistros();aregRenderProcesados2();updateAregBadge();},80);};
-var _origEP_t17=enterPanel;enterPanel=function(){_origEP_t17();setTimeout(dashRender,200);setTimeout(updateAregBadge,300);setTimeout(function(){if(typeof syncFromSupabase==='function')syncFromSupabase().then(function(){dashRender();updateAregBadge();if(typeof navUpdateBadges==='function')navUpdateBadges();});},500);if(typeof syncFromSupabase==='function'){syncFromSupabase().then(function(){dashRender();if(typeof navUpdateBadges==='function')navUpdateBadges();});}};
+var _origShow_t17=showModule;
+showModule=function(id,title,sub){
+  _origShow_t17(id,title,sub);
+  var d=100;
+  if(id==='dashboard')       setTimeout(dashRender,d);
+  if(id==='adashboard')      setTimeout(function(){if(typeof adashRender==='function')adashRender();},d);
+  if(id==='aregistros')      setTimeout(function(){renderAregistros();aregRenderProcesados2();updateAregBadge();},d);
+  if(id==='ausuarios')       setTimeout(function(){if(typeof ausrRenderCards==='function'){document.getElementById('ausr-cards-view').style.display='block';document.getElementById('ausr-detail-view').style.display='none';ausrRenderCards();}},d);
+  if(id==='afinanzas')       setTimeout(function(){if(typeof finRender==='function')finRender();},d);
+  if(id==='academia')        setTimeout(function(){if(typeof acRenderUser==='function')acRenderUser();},d);
+  if(id==='aacademia')       setTimeout(function(){if(typeof acRenderAdmin==='function')acRenderAdmin();},d);
+  if(id==='live')            setTimeout(function(){if(typeof liveRenderUser==='function')liveRenderUser();},d);
+  if(id==='alive')           setTimeout(function(){if(typeof liveRenderAdmin==='function')liveRenderAdmin();},d);
+  if(id==='senales')         setTimeout(function(){if(typeof renderSenalesUsuario==='function')renderSenalesUsuario();},d);
+  if(id==='asenales')        setTimeout(function(){if(typeof renderSenalesAdmin==='function')renderSenalesAdmin();},d);
+  if(id==='eventos')         setTimeout(function(){if(typeof renderEventosUsuario==='function')renderEventosUsuario();},d);
+  if(id==='acalendario')     setTimeout(function(){if(typeof renderEventosAdmin==='function')renderEventosAdmin();},d);
+  if(id==='notificaciones')  setTimeout(function(){if(typeof notifRender==='function'){notifRender();navUpdateBadges();}},d);
+  if(id==='aanuncios')       setTimeout(function(){if(typeof renderAnuncios==='function')renderAnuncios();},d);
+  if(id==='aanuncios_user')  setTimeout(function(){if(typeof renderAnunciosUser==='function')renderAnunciosUser();},d);
+  if(id==='micuenta')        setTimeout(function(){if(typeof mcCargarPerfil==='function'){mcCargarPerfil();switchMC('perfil');}},d);
+  if(id==='comunidad')       setTimeout(function(){if(typeof renderComunidad==='function')renderComunidad();},d);
+  if(id==='notas')           setTimeout(function(){if(typeof renderNotas==='function')renderNotas();},d);
+  if(id==='emociones')       setTimeout(function(){if(typeof renderEmociones==='function')renderEmociones();},d);
+  if(id==='resultados')      setTimeout(function(){if(typeof renderResultados==='function')renderResultados();},d);
+  if(id==='pubretiros')      setTimeout(function(){if(typeof renderPubRetiros==='function')renderPubRetiros();},d);
+  if(id==='objetivos')       setTimeout(function(){if(typeof renderObjetivos==='function')renderObjetivos();},d);
+  if(id==='interaccion')     setTimeout(function(){if(typeof renderChatVivo==='function')renderChatVivo();},d);
+};
+var _origEP_t17=enterPanel;enterPanel=function(){
+  _origEP_t17();
+  // Sync from Supabase first, then render everything
+  syncFromSupabase().then(function(){
+    dashRender();
+    updateAregBadge();
+    if(typeof navUpdateBadges==='function') navUpdateBadges();
+    if(typeof renderSenalesUsuario==='function') renderSenalesUsuario();
+    if(typeof renderEventosUsuario==='function') renderEventosUsuario();
+    if(typeof renderAnunciosUser==='function') renderAnunciosUser();
+    if(typeof acRenderUser==='function') acRenderUser();
+    if(typeof liveRenderUser==='function') liveRenderUser();
+    if(typeof ausrRenderCards==='function') ausrRenderCards();
+    if(typeof adashRender==='function' && currentUser && currentUser.isAdmin) adashRender();
+    if(typeof finRender==='function' && currentUser && currentUser.isAdmin) finRender();
+    if(typeof renderAregistros==='function' && currentUser && currentUser.isAdmin) renderAregistros();
+  });setTimeout(function(){if(typeof syncFromSupabase==='function')syncFromSupabase().then(function(){dashRender();updateAregBadge();if(typeof navUpdateBadges==='function')navUpdateBadges();});},500);if(typeof syncFromSupabase==='function'){syncFromSupabase().then(function(){dashRender();if(typeof navUpdateBadges==='function')navUpdateBadges();});}};
 
 
 // ══════════════════════════════════════════
@@ -2898,22 +2954,24 @@ function renderAregistros() {
 
 
 function aregAprobar2(id, nombre, plan) {
+  // Update localStorage
   var usuarios = lsGet('usuarios') || [];
   var idx = usuarios.findIndex(function(u){ return u.id === id; });
   if(idx > -1) {
     usuarios[idx].estado = 'activo';
     lsSet('usuarios', usuarios);
-    // Update in Supabase
-    if(typeof dbUpdate === 'function') dbUpdate('usuarios', id, {estado:'activo'});
-    if(typeof dbUpdate === 'function') dbUpdate('pagos', null, {estado:'Aprobado'});
-    renderAregistros();
-    aregRenderProcesados2();
-    // Update badge
-    var badge = document.querySelector('[onclick*="aregistros"] .sitem-badge');
-    var pend = usuarios.filter(function(u){return u.estado==='pendiente';}).length;
-    if(badge) { badge.textContent=pend; badge.style.display=pend>0?'flex':'none'; }
   }
+  // Update Supabase
+  dbUpdate('usuarios', id, {estado:'activo'}).then(function(){
+    console.log('✅ User approved in Supabase:', id);
+  });
+  renderAregistros();
+  aregRenderProcesados2();
+  updateAregBadge();
+  // Also update Control Usuarios
+  if(typeof ausrRenderCards === 'function') ausrRenderCards();
 }
+
 
 function aregRechazar2(id) {
   if(!confirm('¿Rechazar este registro?')) return;
@@ -2982,7 +3040,7 @@ function updateAregBadge() {
 
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Inter',sans-serif;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t22</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Inter',sans-serif;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t23</div>
 
 <div style="position:fixed;bottom:0;left:0;right:0;z-index:999;background:rgba(2,8,16,0.95);border-top:1px solid rgba(0,191,255,0.15);padding:6px 20px;display:flex;align-items:center;justify-content:center;gap:16px;">
   <span style="font-size:11px;color:var(--muted);font-family:'Inter',sans-serif;">Elaborado por <span style="color:var(--blue);">Daniel Pérez</span></span>
