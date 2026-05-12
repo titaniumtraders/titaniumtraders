@@ -1,9 +1,53 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <script>
+  // ── SUPABASE AUTH CONFIRMATION HANDLER ──
+  // Runs immediately on page load - handles email confirmation links
+  (function() {
+    var hash = window.location.hash;
+    if(!hash) return;
+
+    // Parse hash params: #access_token=...&type=signup&...
+    var params = {};
+    hash.substring(1).split('&').forEach(function(part) {
+      var eq = part.indexOf('=');
+      if(eq > -1) params[decodeURIComponent(part.substring(0,eq))] = decodeURIComponent(part.substring(eq+1));
+    });
+
+    if(params.type === 'signup' && params.access_token) {
+      // Email confirmed! Show success message and clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      // Wait for page to load then show confirmation
+      window.addEventListener('DOMContentLoaded', function() {
+        var msg = document.createElement('div');
+        msg.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#00c864,#00a050);color:#000;text-align:center;padding:20px;font-family:Inter,sans-serif;font-size:15px;font-weight:600;box-shadow:0 4px 20px rgba(0,200,100,0.4);';
+        msg.innerHTML = '✅ ¡Email confirmado exitosamente! Tu cuenta está en revisión. El administrador activará tu acceso pronto.'
+          + '<br><span style="font-size:12px;opacity:0.8;">Puedes cerrar este mensaje haciendo clic aquí.</span>';
+        msg.onclick = function() { msg.remove(); };
+        document.body.appendChild(msg);
+        setTimeout(function() { if(msg.parentNode) msg.remove(); }, 8000);
+      });
+    }
+
+    if(params.type === 'recovery' && params.access_token) {
+      // Password recovery
+      window.history.replaceState({}, document.title, window.location.pathname);
+      window.addEventListener('DOMContentLoaded', function() {
+        var msg = document.createElement('div');
+        msg.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:var(--blue);color:#000;text-align:center;padding:20px;font-family:Inter,sans-serif;font-size:15px;font-weight:600;';
+        msg.textContent = '🔑 Enlace de recuperación válido. Inicia sesión para cambiar tu contraseña.';
+        document.body.appendChild(msg);
+        setTimeout(function() { if(msg.parentNode) msg.remove(); }, 6000);
+      });
+    }
+  })();
+  </script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t20</title>
+<title>Titanium Traders · t21</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -4691,7 +4735,7 @@ function updateAregBadge() {
 
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Inter',sans-serif;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t20</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Inter',sans-serif;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t21</div>
 
 <div style="position:fixed;bottom:0;left:0;right:0;z-index:999;background:rgba(2,8,16,0.95);border-top:1px solid rgba(0,191,255,0.15);padding:6px 20px;display:flex;align-items:center;justify-content:center;gap:16px;">
   <span style="font-size:11px;color:var(--muted);font-family:'Inter',sans-serif;">Elaborado por <span style="color:var(--blue);">Daniel Pérez</span></span>
