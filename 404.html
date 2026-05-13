@@ -2,10 +2,18 @@
 <html>
 <head>
 <meta charset="utf-8">
+<title>Titanium Traders</title>
 <script>
-sessionStorage.setItem('redirect', window.location.href);
-window.location.replace('https://titaniumtraders.github.io/titaniumtraders');
+  // Capture hash params and redirect to index
+  var hash = window.location.hash;
+  var search = window.location.search;
+  var target = 'https://titaniumtraders.github.io/titaniumtraders/';
+  if(hash) target += hash;
+  else if(search) target += search;
+  window.location.replace(target);
 </script>
 </head>
-<body></body>
+<body>
+<p>Redirigiendo...</p>
+</body>
 </html>
