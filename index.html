@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t28</title>
+<title>Titanium Traders · t29</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -4821,8 +4821,92 @@ function updateAregBadge() {
   }
 })();
 
+
+// ════ APROBAR Y RECHAZAR REGISTROS ════
+function aregAprobar2(id, nombre, plan) {
+  console.log('Aprobando:', id, nombre);
+  fetch(SUPA_URL + '/rest/v1/usuarios?id=eq.' + id, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({estado: 'activo'})
+  }).then(function(r){
+    console.log('Aprobar response:', r.status);
+    if(r.ok) {
+      // Update localStorage
+      var users = lsGet('usuarios') || [];
+      var idx = users.findIndex(function(u){ return u.id === id; });
+      if(idx > -1) {
+        users[idx].estado = 'activo';
+        lsSet('usuarios', users);
+      }
+      // Re-sync and re-render
+      if(typeof syncUsuarios === 'function') {
+        syncUsuarios().then(function(){
+          if(typeof renderAregistros === 'function') renderAregistros();
+          if(typeof aregRenderProcesados2 === 'function') aregRenderProcesados2();
+          if(typeof ausrRenderCards === 'function') ausrRenderCards();
+          if(typeof updateAregBadge === 'function') updateAregBadge();
+        });
+      } else {
+        if(typeof renderAregistros === 'function') renderAregistros();
+        if(typeof aregRenderProcesados2 === 'function') aregRenderProcesados2();
+      }
+    } else {
+      alert('Error al aprobar usuario. Revisa la consola.');
+    }
+  }).catch(function(e){
+    console.error('Error:', e);
+    alert('Error de conexion.');
+  });
+}
+
+function aregRechazar2(id) {
+  if(!confirm('Rechazar este registro?')) return;
+  console.log('Rechazando:', id);
+  fetch(SUPA_URL + '/rest/v1/usuarios?id=eq.' + id, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({estado: 'rechazado'})
+  }).then(function(r){
+    console.log('Rechazar response:', r.status);
+    if(r.ok) {
+      var users = lsGet('usuarios') || [];
+      var idx = users.findIndex(function(u){ return u.id === id; });
+      if(idx > -1) {
+        users[idx].estado = 'rechazado';
+        lsSet('usuarios', users);
+      }
+      if(typeof syncUsuarios === 'function') {
+        syncUsuarios().then(function(){
+          if(typeof renderAregistros === 'function') renderAregistros();
+          if(typeof aregRenderProcesados2 === 'function') aregRenderProcesados2();
+          if(typeof updateAregBadge === 'function') updateAregBadge();
+        });
+      } else {
+        if(typeof renderAregistros === 'function') renderAregistros();
+        if(typeof aregRenderProcesados2 === 'function') aregRenderProcesados2();
+      }
+    } else {
+      alert('Error al rechazar. Revisa la consola.');
+    }
+  }).catch(function(e){
+    console.error('Error:', e);
+    alert('Error de conexion.');
+  });
+}
+
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t28</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t29</div>
 </body>
 </html>
