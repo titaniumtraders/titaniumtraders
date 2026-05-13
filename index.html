@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t30</title>
+<title>Titanium Traders · t32</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -4913,37 +4913,30 @@ function aregRechazar2(id) {
 
 
 // ════════════════════════════════════════════════════════════════
-// T30 - SISTEMA COMPLETO DE PERSISTENCIA INDIVIDUAL + PUBLICA
+// T32 — PERSISTENCIA SUPABASE (sin tocar el diseño original)
 // ════════════════════════════════════════════════════════════════
 
-// Helper: get current user ID
+// Get current user info
 function getCurrentUserId() {
   if(!currentUser) return null;
-  // Find user in localStorage by name
+  if(currentUser.isDev) return 'dev-1739';
+  if(currentUser.name === 'EMMANUEL OCAMPO') return 'admin-emmanuel';
   var users = lsGet('usuarios') || [];
   var u = users.find(function(x){ return x.nombre === currentUser.name; });
   return u ? u.id : null;
 }
+function getCurrentUserName() { return currentUser ? currentUser.name : 'Anonimo'; }
+function isCurrentUserAdmin() { return currentUser && (currentUser.isAdmin || currentUser.isDev); }
 
-function getCurrentUserName() {
-  return currentUser ? currentUser.name : '';
-}
-
-function isCurrentUserAdmin() {
-  return currentUser && (currentUser.isAdmin || currentUser.isDev);
-}
-
-// Supabase generic helpers for tables with user_id
+// Supabase CRUD helpers
 async function supaSelect(table, filter) {
   var url = SUPA_URL + '/rest/v1/' + table;
   if(filter) url += '?' + filter;
   try {
-    var res = await fetch(url, {
-      headers: {'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-    });
+    var res = await fetch(url, {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
     if(!res.ok) return [];
     return await res.json();
-  } catch(e) { console.warn('Select error:',e); return []; }
+  } catch(e) { return []; }
 }
 
 async function supaInsert(table, data) {
@@ -4953,10 +4946,10 @@ async function supaInsert(table, data) {
       headers: {'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
       body: JSON.stringify(data)
     });
-    if(!res.ok) { console.warn('Insert failed:',table,res.status); return null; }
+    if(!res.ok) { console.warn('Insert failed:', table, res.status); return null; }
     var rows = await res.json();
     return rows && rows[0];
-  } catch(e) { console.warn('Insert error:',e); return null; }
+  } catch(e) { return null; }
 }
 
 async function supaUpdateRow(table, id, data) {
@@ -4967,7 +4960,7 @@ async function supaUpdateRow(table, id, data) {
       body: JSON.stringify(data)
     });
     return res.ok;
-  } catch(e) { console.warn('Update error:',e); return false; }
+  } catch(e) { return false; }
 }
 
 async function supaDelete(table, id) {
@@ -4977,736 +4970,231 @@ async function supaDelete(table, id) {
       headers: {'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'}
     });
     return res.ok;
-  } catch(e) { console.warn('Delete error:',e); return false; }
+  } catch(e) { return false; }
 }
 
-// ════════════════════════════════════════════════════════════════
-// SYNC TODOS LOS DATOS DEL USUARIO AL INICIAR
-// ════════════════════════════════════════════════════════════════
-async function syncUserData() {
-  var uid = getCurrentUserId();
-  if(!uid) return;
-  console.log('Syncing user data for:', uid);
+// ════ HOOKS para guardar al hacer cambios en LOS MODULOS ORIGINALES ════
+// Estos hooks interceptan las funciones lsSet originales para detectar cambios y replicarlos a Supabase
 
+var _origLsSet = lsSet;
+lsSet = function(key, val) {
+  var result = _origLsSet(key, val);
+  // Replicate to Supabase for known keys
+  setTimeout(function(){ syncKeyToSupabase(key, val); }, 100);
+  return result;
+};
+
+async function syncKeyToSupabase(key, val) {
+  var uid = getCurrentUserId();
+  if(!uid || !val) return;
+
+  // SEÑALES (admin → publico)
+  if(key === 'senales' && isCurrentUserAdmin()) {
+    // Don't auto-sync - admin uses dedicated admin module to publish
+    return;
+  }
+
+  // NOTAS (individual)
+  if(key === 'notas' && Array.isArray(val)) {
+    // Save only the latest entry if exists
+    var lastNote = val[0];
+    if(lastNote && !lastNote._synced) {
+      var nuevo = {user_id: uid, titulo: lastNote.titulo||'', contenido: lastNote.contenido||lastNote.texto||'', categoria: lastNote.categoria||'general', fecha: lastNote.fecha||new Date().toLocaleDateString('es-CO')};
+      supaInsert('notas', nuevo).then(function(s){if(s){lastNote._synced=true;lastNote.id=s.id;}});
+    }
+  }
+
+  // EMOCIONES
+  if(key === 'emociones' && Array.isArray(val)) {
+    var lastE = val[0];
+    if(lastE && !lastE._synced) {
+      var nueva = {user_id:uid, fecha:lastE.fecha||new Date().toLocaleDateString('es-CO'), emojis:(Array.isArray(lastE.emojis)?lastE.emojis.join(','):lastE.emojis)||'', nota:lastE.nota||'', intensidad:lastE.intensidad||5};
+      supaInsert('emociones', nueva).then(function(s){if(s){lastE._synced=true;lastE.id=s.id;}});
+    }
+  }
+}
+
+// ════ SYNC FROM SUPABASE on login (replaces localStorage with real data) ════
+async function syncAllFromSupabase() {
   try {
-    // Individual data
-    var cuentas = await supaSelect('cuentas', 'user_id=eq.'+uid);
-    if(cuentas) lsSet('user_cuentas', cuentas);
+    // Senales (public)
+    var senales = await supaSelect('senales', 'order=created_at.desc');
+    if(senales && senales.length) {
+      _origLsSet('senales', senales.map(function(s){return {id:s.id,par:s.par,dir:s.dir,entrada:s.entrada,sl:s.sl,tp:s.tp,estado:s.estado,nota:s.nota||'',fecha:s.fecha};}));
+    }
+    // Anuncios (public)
+    var anuncios = await supaSelect('anuncios', 'order=created_at.desc');
+    if(anuncios && anuncios.length) {
+      _origLsSet('anuncios', anuncios.map(function(a){return {id:a.id,tipo:a.tipo,titulo:a.titulo,msg:a.mensaje,fecha:a.fecha};}));
+    }
+    // Eventos (public)
+    var eventos = await supaSelect('eventos', 'order=fecha.asc');
+    if(eventos && eventos.length) {
+      _origLsSet('eventos', eventos.map(function(e){return {id:e.id,titulo:e.titulo,tipo:e.tipo,fecha:e.fecha,hora:e.hora,desc:e.descripcion};}));
+    }
+    // Academia (public)
+    var academia = await supaSelect('academia', 'order=created_at.desc');
+    if(academia && academia.length) {
+      _origLsSet('academia', academia.map(function(a){return {id:a.id,tipo:a.tipo,titulo:a.titulo,desc:a.descripcion,nivel:a.nivel,url:a.url,img:a.img,fecha:a.fecha};}));
+    }
+    // Lives (public)
+    var lives = await supaSelect('lives', 'order=created_at.desc');
+    if(lives && lives.length) {
+      _origLsSet('lives', lives.map(function(l){return {id:l.id,tipo:l.tipo,titulo:l.titulo,desc:l.descripcion,estado:l.estado,ytUrl:l.yt_url,zoomUrl:l.zoom_url,zoomPass:l.zoom_pass,fecha:l.fecha};}));
+    }
+    // Pagos
+    var pagos = await supaSelect('pagos', 'order=created_at.desc');
+    if(pagos && pagos.length) {
+      _origLsSet('fin_comprobantes', pagos.map(function(p){return {id:p.id,usuario:p.usuario,monto:p.monto,metodo:p.metodo,ref:p.referencia,comprobante:p.comprobante,estado:p.estado,fecha:p.fecha};}));
+    }
 
-    var operaciones = await supaSelect('operaciones', 'user_id=eq.'+uid);
-    if(operaciones) lsSet('user_operaciones', operaciones);
+    // Individual data for current user
+    var uid = getCurrentUserId();
+    if(uid && uid !== 'dev-1739' && uid !== 'admin-emmanuel') {
+      // Notas individuales
+      var notas = await supaSelect('notas', 'user_id=eq.'+uid+'&order=created_at.desc');
+      if(notas && notas.length) {
+        _origLsSet('notas', notas.map(function(n){n._synced=true;return n;}));
+      }
+      // Emociones individuales
+      var emos = await supaSelect('emociones', 'user_id=eq.'+uid+'&order=created_at.desc');
+      if(emos && emos.length) {
+        _origLsSet('emociones', emos.map(function(e){e._synced=true;return e;}));
+      }
+      // Objetivos
+      var objs = await supaSelect('objetivos', 'user_id=eq.'+uid);
+      if(objs && objs.length) _origLsSet('objetivos', objs);
+      // Plan Trading
+      var plan = await supaSelect('plan_trading', 'user_id=eq.'+uid);
+      if(plan && plan.length) _origLsSet('plan_trading', plan[0]);
+      // Cuentas
+      var cuentas = await supaSelect('cuentas', 'user_id=eq.'+uid);
+      if(cuentas && cuentas.length) _origLsSet('user_cuentas', cuentas);
+    }
 
-    var notas = await supaSelect('notas', 'user_id=eq.'+uid+'&order=created_at.desc');
-    if(notas) lsSet('user_notas', notas);
-
-    var emociones = await supaSelect('emociones', 'user_id=eq.'+uid+'&order=created_at.desc');
-    if(emociones) lsSet('user_emociones', emociones);
-
-    var objetivos = await supaSelect('objetivos', 'user_id=eq.'+uid);
-    if(objetivos) lsSet('user_objetivos', objetivos);
-
-    var planT = await supaSelect('plan_trading', 'user_id=eq.'+uid);
-    if(planT && planT.length) lsSet('user_plan_trading', planT[0]);
-
-    // Public data
+    // Public posts
     var resultados = await supaSelect('resultados', 'order=created_at.desc');
-    if(resultados) lsSet('pub_resultados', resultados);
-
+    if(resultados) _origLsSet('pub_resultados', resultados);
     var retiros = await supaSelect('publicar_retiros', 'order=created_at.desc');
-    if(retiros) lsSet('pub_retiros', retiros);
-
+    if(retiros) _origLsSet('pub_retiros', retiros);
     var com = await supaSelect('comunidad', 'order=created_at.desc');
-    if(com) lsSet('pub_comunidad', com);
-
+    if(com) _origLsSet('pub_comunidad', com);
     var chat = await supaSelect('chat_vivo', 'order=created_at.desc&limit=100');
-    if(chat) lsSet('pub_chat', chat);
+    if(chat) _origLsSet('pub_chat', chat);
 
-    console.log('User data synced');
-  } catch(e) { console.warn('Sync user data error:', e); }
+    // Planes config
+    var planes = await supaSelect('planes_config', 'order=orden.asc');
+    if(planes) _origLsSet('planes_config', planes);
+
+    console.log('Sync all from Supabase complete');
+    return true;
+  } catch(e) { console.warn('Sync error:', e); return false; }
 }
 
-// ════════════════════════════════════════════════════════════════
-// MODULO: RESULTADOS (publico, autor edita)
-// ════════════════════════════════════════════════════════════════
-function renderResultados() {
-  var cont = document.querySelector('#mod-resultados .module-content') || document.getElementById('mod-resultados');
-  if(!cont) return;
-  var resultados = lsGet('pub_resultados') || [];
-  var uid = getCurrentUserId();
-  var isAdmin = isCurrentUserAdmin();
-
-  var html = '<div style="margin-bottom:20px;">'
-    + '<button class="btn-action" onclick="abrirPublicarResultado()" style="background:var(--blue);color:#000;font-weight:700;">+ Publicar Resultado</button>'
-    + '</div>';
-
-  if(!resultados.length) {
-    html += '<div style="text-align:center;padding:40px;color:var(--muted);">Sin resultados publicados</div>';
-  } else {
-    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">';
-    resultados.forEach(function(r) {
-      var puedeEditar = isAdmin || r.user_id === uid;
-      html += '<div style="background:var(--bg2);padding:16px;border-radius:4px;border-left:3px solid var(--blue);">'
-        + '<div style="display:flex;justify-content:space-between;margin-bottom:8px;">'
-        + '<div style="font-size:13px;font-weight:600;">'+(r.user_nombre||'Usuario')+'</div>'
-        + '<div style="font-size:11px;color:var(--muted);">'+(r.fecha||'')+'</div>'
-        + '</div>'
-        + (r.titulo ? '<div style="font-size:14px;color:var(--white);font-weight:600;margin-bottom:6px;">'+r.titulo+'</div>' : '')
-        + (r.imagen ? '<img src="'+r.imagen+'" style="width:100%;border-radius:3px;margin-bottom:8px;">' : '')
-        + (r.descripcion ? '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">'+r.descripcion+'</div>' : '')
-        + (puedeEditar ? '<div style="display:flex;gap:6px;"><button class="btn-action sm" onclick="editarResultado(\''+r.id+'\')">Editar</button><button class="btn-action sm red" onclick="eliminarResultado(\''+r.id+'\')">Eliminar</button></div>' : '')
-        + '</div>';
-    });
-    html += '</div>';
-  }
-  cont.innerHTML = '<div class="mod-header"><div class="mod-title">📊 RESULTADOS</div><div class="mod-sub">Publicaciones de la comunidad</div><div class="mod-divider"></div></div>' + html;
-}
-
-function abrirPublicarResultado() {
-  var titulo = prompt('Titulo del resultado:');
-  if(!titulo) return;
-  var descripcion = prompt('Descripcion:') || '';
-  var uid = getCurrentUserId();
-  if(!uid) { alert('Inicia sesion para publicar.'); return; }
-  var nuevo = {
-    user_id: uid,
-    user_nombre: getCurrentUserName(),
-    titulo: titulo,
-    descripcion: descripcion,
-    imagen: '',
-    fecha: new Date().toLocaleDateString('es-CO')
-  };
-  supaInsert('resultados', nuevo).then(function(saved){
-    if(saved) {
-      var lista = lsGet('pub_resultados') || [];
-      lista.unshift(saved);
-      lsSet('pub_resultados', lista);
-      renderResultados();
-    } else { alert('Error al publicar.'); }
-  });
-}
-
-function editarResultado(id) {
-  var lista = lsGet('pub_resultados') || [];
-  var r = lista.find(function(x){return x.id===id;});
-  if(!r) return;
-  var uid = getCurrentUserId();
-  if(!isCurrentUserAdmin() && r.user_id !== uid) { alert('No puedes editar este resultado.'); return; }
-  var nuevoTit = prompt('Editar titulo:', r.titulo);
-  if(nuevoTit === null) return;
-  var nuevaDesc = prompt('Editar descripcion:', r.descripcion);
-  if(nuevaDesc === null) return;
-  supaUpdateRow('resultados', id, {titulo:nuevoTit, descripcion:nuevaDesc}).then(function(ok){
-    if(ok) {
-      r.titulo = nuevoTit; r.descripcion = nuevaDesc;
-      lsSet('pub_resultados', lista);
-      renderResultados();
-    }
-  });
-}
-
-function eliminarResultado(id) {
-  if(!confirm('Eliminar este resultado?')) return;
-  supaDelete('resultados', id).then(function(ok){
-    if(ok) {
-      var lista = lsGet('pub_resultados') || [];
-      lsSet('pub_resultados', lista.filter(function(x){return x.id!==id;}));
-      renderResultados();
-    }
-  });
-}
-
-// ════════════════════════════════════════════════════════════════
-// MODULO: PUBLICAR RETIROS (publico, autor edita)
-// ════════════════════════════════════════════════════════════════
-function renderPubRetiros() {
-  var cont = document.getElementById('mod-pubretiros');
-  if(!cont) return;
-  var retiros = lsGet('pub_retiros') || [];
-  var uid = getCurrentUserId();
-  var isAdmin = isCurrentUserAdmin();
-
-  var html = '<div style="margin-bottom:20px;">'
-    + '<button class="btn-action" onclick="abrirPublicarRetiro()" style="background:var(--gold);color:#000;font-weight:700;">+ Publicar Retiro</button>'
-    + '</div>';
-
-  if(!retiros.length) {
-    html += '<div style="text-align:center;padding:40px;color:var(--muted);">Sin retiros publicados</div>';
-  } else {
-    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">';
-    retiros.forEach(function(r) {
-      var puedeEditar = isAdmin || r.user_id === uid;
-      html += '<div style="background:var(--bg2);padding:16px;border-radius:4px;border-left:3px solid var(--gold);">'
-        + '<div style="display:flex;justify-content:space-between;margin-bottom:8px;">'
-        + '<div style="font-size:13px;font-weight:600;">'+(r.user_nombre||'Usuario')+'</div>'
-        + '<div style="font-size:11px;color:var(--muted);">'+(r.fecha||'')+'</div>'
-        + '</div>'
-        + '<div style="font-size:20px;color:var(--gold);font-weight:700;margin-bottom:6px;">$'+(r.monto||0)+'</div>'
-        + (r.broker ? '<div style="font-size:12px;color:var(--white);margin-bottom:4px;">Broker: '+r.broker+'</div>' : '')
-        + (r.descripcion ? '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">'+r.descripcion+'</div>' : '')
-        + (puedeEditar ? '<div style="display:flex;gap:6px;"><button class="btn-action sm" onclick="editarRetiro(\''+r.id+'\')">Editar</button><button class="btn-action sm red" onclick="eliminarRetiro(\''+r.id+'\')">Eliminar</button></div>' : '')
-        + '</div>';
-    });
-    html += '</div>';
-  }
-  cont.innerHTML = '<div class="mod-header"><div class="mod-title">💰 PUBLICAR RETIROS</div><div class="mod-sub">Retiros de la comunidad</div><div class="mod-divider"></div></div>' + html;
-}
-
-function abrirPublicarRetiro() {
-  var monto = prompt('Monto del retiro ($):');
-  if(!monto) return;
-  var broker = prompt('Broker:') || '';
-  var descripcion = prompt('Descripcion (opcional):') || '';
-  var uid = getCurrentUserId();
-  if(!uid) { alert('Inicia sesion para publicar.'); return; }
-  var nuevo = {
-    user_id: uid,
-    user_nombre: getCurrentUserName(),
-    monto: parseFloat(monto),
-    broker: broker,
-    descripcion: descripcion,
-    imagen: '',
-    fecha: new Date().toLocaleDateString('es-CO')
-  };
-  supaInsert('publicar_retiros', nuevo).then(function(saved){
-    if(saved) {
-      var lista = lsGet('pub_retiros') || [];
-      lista.unshift(saved);
-      lsSet('pub_retiros', lista);
-      renderPubRetiros();
-    }
-  });
-}
-
-function editarRetiro(id) {
-  var lista = lsGet('pub_retiros') || [];
-  var r = lista.find(function(x){return x.id===id;});
-  if(!r) return;
-  var uid = getCurrentUserId();
-  if(!isCurrentUserAdmin() && r.user_id !== uid) { alert('No puedes editar este retiro.'); return; }
-  var nuevoMonto = prompt('Editar monto:', r.monto);
-  if(nuevoMonto === null) return;
-  var nuevoBroker = prompt('Editar broker:', r.broker);
-  if(nuevoBroker === null) return;
-  var nuevaDesc = prompt('Editar descripcion:', r.descripcion);
-  if(nuevaDesc === null) return;
-  supaUpdateRow('publicar_retiros', id, {monto:parseFloat(nuevoMonto), broker:nuevoBroker, descripcion:nuevaDesc}).then(function(ok){
-    if(ok) {
-      r.monto = parseFloat(nuevoMonto); r.broker = nuevoBroker; r.descripcion = nuevaDesc;
-      lsSet('pub_retiros', lista);
-      renderPubRetiros();
-    }
-  });
-}
-
-function eliminarRetiro(id) {
-  if(!confirm('Eliminar este retiro?')) return;
-  supaDelete('publicar_retiros', id).then(function(ok){
-    if(ok) {
-      var lista = lsGet('pub_retiros') || [];
-      lsSet('pub_retiros', lista.filter(function(x){return x.id!==id;}));
-      renderPubRetiros();
-    }
-  });
-}
-
-// ════════════════════════════════════════════════════════════════
-// MODULO: COMUNIDAD (publico, autor edita)
-// ════════════════════════════════════════════════════════════════
-function renderComunidad() {
-  var cont = document.getElementById('mod-comunidad');
-  if(!cont) return;
-  var posts = lsGet('pub_comunidad') || [];
-  var uid = getCurrentUserId();
-  var isAdmin = isCurrentUserAdmin();
-
-  var html = '<div style="margin-bottom:20px;display:flex;gap:8px;">'
-    + '<input type="text" id="com-input" placeholder="Comparte algo con la comunidad..." class="pform-input" style="flex:1;">'
-    + '<button class="btn-action" onclick="publicarComunidad()" style="background:var(--blue);color:#000;font-weight:700;">Publicar</button>'
-    + '</div>';
-
-  if(!posts.length) {
-    html += '<div style="text-align:center;padding:40px;color:var(--muted);">Sin publicaciones aun</div>';
-  } else {
-    html += '<div style="display:flex;flex-direction:column;gap:12px;">';
-    posts.forEach(function(p) {
-      var puedeEditar = isAdmin || p.user_id === uid;
-      html += '<div style="background:var(--bg2);padding:14px;border-radius:4px;border-left:3px solid var(--blue);">'
-        + '<div style="display:flex;justify-content:space-between;margin-bottom:8px;">'
-        + '<div style="font-size:13px;font-weight:600;color:var(--white);">'+(p.user_nombre||'Usuario')+'</div>'
-        + '<div style="font-size:11px;color:var(--muted);">'+(p.fecha||'')+'</div>'
-        + '</div>'
-        + '<div style="font-size:13px;color:var(--white);margin-bottom:8px;">'+(p.texto||'')+'</div>'
-        + (puedeEditar ? '<div style="display:flex;gap:6px;"><button class="btn-action sm" onclick="editarComunidad(\''+p.id+'\')">Editar</button><button class="btn-action sm red" onclick="eliminarComunidad(\''+p.id+'\')">Eliminar</button></div>' : '')
-        + '</div>';
-    });
-    html += '</div>';
-  }
-  cont.innerHTML = '<div class="mod-header"><div class="mod-title">👥 COMUNIDAD</div><div class="mod-sub">Comparte con otros traders</div><div class="mod-divider"></div></div>' + html;
-}
-
-function publicarComunidad() {
-  var input = document.getElementById('com-input');
-  if(!input || !input.value.trim()) return;
-  var uid = getCurrentUserId();
-  if(!uid) { alert('Inicia sesion para publicar.'); return; }
-  var nuevo = {
-    user_id: uid,
-    user_nombre: getCurrentUserName(),
-    texto: input.value.trim(),
-    imagen: '',
-    fecha: new Date().toLocaleDateString('es-CO')
-  };
-  supaInsert('comunidad', nuevo).then(function(saved){
-    if(saved) {
-      var lista = lsGet('pub_comunidad') || [];
-      lista.unshift(saved);
-      lsSet('pub_comunidad', lista);
-      input.value = '';
-      renderComunidad();
-    }
-  });
-}
-
-function editarComunidad(id) {
-  var lista = lsGet('pub_comunidad') || [];
-  var p = lista.find(function(x){return x.id===id;});
-  if(!p) return;
-  var uid = getCurrentUserId();
-  if(!isCurrentUserAdmin() && p.user_id !== uid) { alert('No puedes editar.'); return; }
-  var nuevo = prompt('Editar publicacion:', p.texto);
-  if(nuevo === null) return;
-  supaUpdateRow('comunidad', id, {texto:nuevo}).then(function(ok){
-    if(ok) {
-      p.texto = nuevo;
-      lsSet('pub_comunidad', lista);
-      renderComunidad();
-    }
-  });
-}
-
-function eliminarComunidad(id) {
-  if(!confirm('Eliminar esta publicacion?')) return;
-  supaDelete('comunidad', id).then(function(ok){
-    if(ok) {
-      var lista = lsGet('pub_comunidad') || [];
-      lsSet('pub_comunidad', lista.filter(function(x){return x.id!==id;}));
-      renderComunidad();
-    }
-  });
-}
-
-// ════════════════════════════════════════════════════════════════
-// MODULO: CHAT EN VIVO (publico, tiempo real)
-// ════════════════════════════════════════════════════════════════
-var chatPollInterval = null;
-
-function renderChatVivo() {
-  var cont = document.getElementById('mod-interaccion');
-  if(!cont) return;
-  var uid = getCurrentUserId();
-  var isAdmin = isCurrentUserAdmin();
-
-  cont.innerHTML = '<div class="mod-header"><div class="mod-title">💬 CHAT EN VIVO</div><div class="mod-sub">Conversa con la comunidad en tiempo real</div><div class="mod-divider"></div></div>'
-    + '<div id="chat-msgs" style="background:var(--bg2);padding:14px;height:400px;overflow-y:auto;border-radius:4px;margin-bottom:12px;display:flex;flex-direction:column;gap:8px;"></div>'
-    + '<div style="display:flex;gap:8px;">'
-    + '<input type="text" id="chat-input" placeholder="Escribe un mensaje..." class="pform-input" style="flex:1;" onkeypress="if(event.key===\'Enter\')enviarChat()">'
-    + '<button class="btn-action" onclick="enviarChat()" style="background:var(--blue);color:#000;font-weight:700;">Enviar</button>'
-    + '</div>';
-
-  refreshChat();
-  if(chatPollInterval) clearInterval(chatPollInterval);
-  chatPollInterval = setInterval(refreshChat, 5000);
-}
-
-async function refreshChat() {
-  var msgs = await supaSelect('chat_vivo', 'order=created_at.desc&limit=50');
-  if(!msgs) return;
-  lsSet('pub_chat', msgs);
-  var cont = document.getElementById('chat-msgs');
-  if(!cont) return;
-  var uid = getCurrentUserId();
-  var isAdmin = isCurrentUserAdmin();
-  msgs.reverse();
-  cont.innerHTML = msgs.map(function(m) {
-    var mio = m.user_id === uid;
-    var puedeEditar = isAdmin || mio;
-    return '<div style="padding:8px 12px;background:'+(mio?'rgba(0,191,255,0.1)':'var(--bg)')+';border-radius:4px;border-left:2px solid '+(mio?'var(--blue)':'var(--border)')+';">'
-      + '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
-      + '<div style="font-size:11px;font-weight:600;color:var(--blue);">'+(m.user_nombre||'Usuario')+'</div>'
-      + '<div style="font-size:10px;color:var(--muted);">'+(m.fecha||'')+'</div>'
-      + '</div>'
-      + '<div style="font-size:13px;color:var(--white);">'+m.texto+'</div>'
-      + (puedeEditar ? '<div style="display:flex;gap:4px;margin-top:4px;"><button class="btn-action sm" style="padding:2px 8px;font-size:10px;" onclick="editarChat(\''+m.id+'\')">✏️</button><button class="btn-action sm red" style="padding:2px 8px;font-size:10px;" onclick="eliminarChat(\''+m.id+'\')">🗑️</button></div>' : '')
-      + '</div>';
-  }).join('');
-  cont.scrollTop = cont.scrollHeight;
-}
-
-function enviarChat() {
-  var input = document.getElementById('chat-input');
-  if(!input || !input.value.trim()) return;
-  var uid = getCurrentUserId();
-  if(!uid) { alert('Inicia sesion para escribir.'); return; }
-  var nuevo = {
-    user_id: uid,
-    user_nombre: getCurrentUserName(),
-    texto: input.value.trim(),
-    fecha: new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})
-  };
-  supaInsert('chat_vivo', nuevo).then(function(){
-    input.value = '';
-    refreshChat();
-  });
-}
-
-function editarChat(id) {
-  var lista = lsGet('pub_chat') || [];
-  var m = lista.find(function(x){return x.id===id;});
-  if(!m) return;
-  var uid = getCurrentUserId();
-  if(!isCurrentUserAdmin() && m.user_id !== uid) return;
-  var nuevo = prompt('Editar mensaje:', m.texto);
-  if(nuevo === null) return;
-  supaUpdateRow('chat_vivo', id, {texto:nuevo}).then(refreshChat);
-}
-
-function eliminarChat(id) {
-  if(!confirm('Eliminar mensaje?')) return;
-  supaDelete('chat_vivo', id).then(refreshChat);
-}
-
-// ════════════════════════════════════════════════════════════════
-// MODULO: NOTAS (individual)
-// ════════════════════════════════════════════════════════════════
-function renderNotas() {
-  var cont = document.getElementById('mod-notas');
-  if(!cont) return;
-  var uid = getCurrentUserId();
-  if(!uid) { cont.innerHTML='<div class="mod-header"><div class="mod-title">📝 NOTAS</div></div><div style="padding:30px;text-align:center;color:var(--muted);">Inicia sesion para ver tus notas.</div>'; return; }
-
-  var notas = (lsGet('user_notas')||[]).filter(function(n){return n.user_id===uid;});
-
-  var html = '<div class="mod-header"><div class="mod-title">📝 NOTAS</div><div class="mod-sub">Tus notas privadas</div><div class="mod-divider"></div></div>'
-    + '<div style="margin-bottom:20px;">'
-    + '<input type="text" id="nota-titulo" class="pform-input" placeholder="Titulo" style="margin-bottom:8px;">'
-    + '<textarea id="nota-contenido" class="pform-input" placeholder="Contenido de la nota..." style="min-height:80px;margin-bottom:8px;"></textarea>'
-    + '<button class="btn-action" onclick="guardarNota()" style="background:var(--blue);color:#000;font-weight:700;">+ Guardar Nota</button>'
-    + '</div>';
-
-  if(!notas.length) {
-    html += '<div style="text-align:center;padding:40px;color:var(--muted);">No tienes notas guardadas</div>';
-  } else {
-    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;">';
-    notas.forEach(function(n) {
-      html += '<div style="background:var(--bg2);padding:14px;border-radius:4px;border-left:3px solid var(--gold);">'
-        + '<div style="display:flex;justify-content:space-between;margin-bottom:6px;">'
-        + '<div style="font-size:13px;font-weight:600;">'+(n.titulo||'Sin titulo')+'</div>'
-        + '<div style="font-size:10px;color:var(--muted);">'+(n.fecha||'')+'</div>'
-        + '</div>'
-        + '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;white-space:pre-wrap;">'+(n.contenido||'')+'</div>'
-        + '<div style="display:flex;gap:6px;"><button class="btn-action sm" onclick="editarNota(\''+n.id+'\')">Editar</button><button class="btn-action sm red" onclick="eliminarNota(\''+n.id+'\')">Eliminar</button></div>'
-        + '</div>';
-    });
-    html += '</div>';
-  }
-  cont.innerHTML = html;
-}
-
-function guardarNota() {
-  var tit = (document.getElementById('nota-titulo')||{}).value||'';
-  var cont = (document.getElementById('nota-contenido')||{}).value||'';
-  if(!tit.trim() && !cont.trim()) return;
-  var uid = getCurrentUserId();
-  if(!uid) return;
-  var nueva = {
-    user_id: uid,
-    titulo: tit,
-    contenido: cont,
-    categoria: 'general',
-    fecha: new Date().toLocaleDateString('es-CO')
-  };
-  supaInsert('notas', nueva).then(function(saved){
-    if(saved) {
-      var lista = lsGet('user_notas') || [];
-      lista.unshift(saved);
-      lsSet('user_notas', lista);
-      document.getElementById('nota-titulo').value = '';
-      document.getElementById('nota-contenido').value = '';
-      renderNotas();
-    }
-  });
-}
-
-function editarNota(id) {
-  var lista = lsGet('user_notas') || [];
-  var n = lista.find(function(x){return x.id===id;});
-  if(!n) return;
-  var tit = prompt('Editar titulo:', n.titulo);
-  if(tit === null) return;
-  var cont = prompt('Editar contenido:', n.contenido);
-  if(cont === null) return;
-  supaUpdateRow('notas', id, {titulo:tit, contenido:cont}).then(function(ok){
-    if(ok) { n.titulo=tit; n.contenido=cont; lsSet('user_notas',lista); renderNotas(); }
-  });
-}
-
-function eliminarNota(id) {
-  if(!confirm('Eliminar esta nota?')) return;
-  supaDelete('notas', id).then(function(ok){
-    if(ok) {
-      var lista = lsGet('user_notas') || [];
-      lsSet('user_notas', lista.filter(function(x){return x.id!==id;}));
-      renderNotas();
-    }
-  });
-}
-
-// ════════════════════════════════════════════════════════════════
-// MODULO: EMOCIONES (individual)
-// ════════════════════════════════════════════════════════════════
-function renderEmociones() {
-  var cont = document.getElementById('mod-emociones');
-  if(!cont) return;
-  var uid = getCurrentUserId();
-  if(!uid) { cont.innerHTML='<div class="mod-header"><div class="mod-title">🧠 EMOCIONES</div></div><div style="padding:30px;text-align:center;color:var(--muted);">Inicia sesion.</div>'; return; }
-
-  var emos = (lsGet('user_emociones')||[]).filter(function(e){return e.user_id===uid;});
-  var emojis = ['😊 Tranquilo','😄 Eufórico','😰 Ansioso','😔 Frustrado','😤 Enojado','🤔 Pensativo','😴 Cansado','💪 Motivado'];
-
-  var html = '<div class="mod-header"><div class="mod-title">🧠 EMOCIONES</div><div class="mod-sub">Registra tu estado emocional</div><div class="mod-divider"></div></div>'
-    + '<div style="margin-bottom:20px;background:var(--bg2);padding:16px;border-radius:4px;">'
-    + '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Como te sientes hoy?</div>'
-    + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">';
-  emojis.forEach(function(e,i){
-    html += '<button class="btn-action sm" onclick="seleccionarEmoji(\''+e+'\')" id="emo-btn-'+i+'">'+e+'</button>';
-  });
-  html += '</div>'
-    + '<div style="font-size:11px;color:var(--blue);margin-bottom:6px;">Seleccionado: <span id="emo-sel">ninguno</span></div>'
-    + '<textarea id="emo-nota" class="pform-input" placeholder="Nota opcional sobre como te sientes..." style="min-height:60px;margin-bottom:8px;"></textarea>'
-    + '<button class="btn-action" onclick="guardarEmocion()" style="background:var(--blue);color:#000;font-weight:700;">+ Registrar</button>'
-    + '</div>';
-
-  if(!emos.length) {
-    html += '<div style="text-align:center;padding:40px;color:var(--muted);">Sin registros emocionales</div>';
-  } else {
-    html += '<div style="display:flex;flex-direction:column;gap:8px;">';
-    emos.forEach(function(e) {
-      html += '<div style="background:var(--bg2);padding:12px;border-radius:4px;border-left:3px solid #ff69b4;display:flex;justify-content:space-between;align-items:center;">'
-        + '<div><div style="font-size:14px;">'+e.emojis+'</div>'
-        + (e.nota ? '<div style="font-size:12px;color:var(--muted);margin-top:4px;">'+e.nota+'</div>' : '')
-        + '</div>'
-        + '<div style="display:flex;gap:6px;align-items:center;">'
-        + '<div style="font-size:10px;color:var(--muted);">'+(e.fecha||'')+'</div>'
-        + '<button class="btn-action sm red" onclick="eliminarEmocion(\''+e.id+'\')">🗑️</button>'
-        + '</div></div>';
-    });
-    html += '</div>';
-  }
-  cont.innerHTML = html;
-}
-
-var emoSeleccionado = null;
-function seleccionarEmoji(e) {
-  emoSeleccionado = e;
-  document.getElementById('emo-sel').textContent = e;
-}
-
-function guardarEmocion() {
-  if(!emoSeleccionado) { alert('Selecciona como te sientes.'); return; }
-  var uid = getCurrentUserId();
-  if(!uid) return;
-  var nota = (document.getElementById('emo-nota')||{}).value||'';
-  var nueva = {
-    user_id: uid,
-    fecha: new Date().toLocaleDateString('es-CO'),
-    emojis: emoSeleccionado,
-    nota: nota,
-    intensidad: 5
-  };
-  supaInsert('emociones', nueva).then(function(saved){
-    if(saved) {
-      var lista = lsGet('user_emociones') || [];
-      lista.unshift(saved);
-      lsSet('user_emociones', lista);
-      emoSeleccionado = null;
-      renderEmociones();
-    }
-  });
-}
-
-function eliminarEmocion(id) {
-  if(!confirm('Eliminar este registro?')) return;
-  supaDelete('emociones', id).then(function(ok){
-    if(ok) {
-      var lista = lsGet('user_emociones') || [];
-      lsSet('user_emociones', lista.filter(function(x){return x.id!==id;}));
-      renderEmociones();
-    }
-  });
-}
-
-// ════════════════════════════════════════════════════════════════
-// MODULO: OBJETIVOS (individual)
-// ════════════════════════════════════════════════════════════════
-function renderObjetivos() {
-  var cont = document.getElementById('mod-objetivos');
-  if(!cont) return;
-  var uid = getCurrentUserId();
-  if(!uid) { cont.innerHTML='<div class="mod-header"><div class="mod-title">🎯 OBJETIVOS</div></div><div style="padding:30px;text-align:center;color:var(--muted);">Inicia sesion.</div>'; return; }
-
-  var objs = (lsGet('user_objetivos')||[]).filter(function(o){return o.user_id===uid;});
-
-  var html = '<div class="mod-header"><div class="mod-title">🎯 OBJETIVOS</div><div class="mod-sub">Tus metas personales</div><div class="mod-divider"></div></div>'
-    + '<div style="margin-bottom:20px;">'
-    + '<button class="btn-action" onclick="abrirNuevoObjetivo()" style="background:var(--gold);color:#000;font-weight:700;">+ Nuevo Objetivo</button>'
-    + '</div>';
-
-  if(!objs.length) {
-    html += '<div style="text-align:center;padding:40px;color:var(--muted);">Sin objetivos definidos</div>';
-  } else {
-    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">';
-    objs.forEach(function(o) {
-      var pct = o.meta > 0 ? Math.min(100, (o.progreso/o.meta)*100) : 0;
-      html += '<div style="background:var(--bg2);padding:14px;border-radius:4px;border-left:3px solid var(--gold);">'
-        + '<div style="font-size:13px;font-weight:600;margin-bottom:6px;">'+(o.titulo||'Objetivo')+'</div>'
-        + (o.descripcion ? '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">'+o.descripcion+'</div>' : '')
-        + '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;"><span>Progreso: '+o.progreso+' / '+o.meta+'</span><span style="color:var(--gold);">'+pct.toFixed(0)+'%</span></div>'
-        + '<div style="background:var(--bg);height:6px;border-radius:3px;overflow:hidden;margin-bottom:10px;"><div style="background:var(--gold);height:100%;width:'+pct+'%;"></div></div>'
-        + (o.fecha_limite ? '<div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Vence: '+o.fecha_limite+'</div>' : '')
-        + '<div style="display:flex;gap:6px;"><button class="btn-action sm" onclick="editarObjetivo(\''+o.id+'\')">Editar</button><button class="btn-action sm red" onclick="eliminarObjetivo(\''+o.id+'\')">Eliminar</button></div>'
-        + '</div>';
-    });
-    html += '</div>';
-  }
-  cont.innerHTML = html;
-}
-
-function abrirNuevoObjetivo() {
-  var titulo = prompt('Titulo del objetivo:');
-  if(!titulo) return;
-  var descripcion = prompt('Descripcion:') || '';
-  var meta = parseFloat(prompt('Meta (numero):')) || 100;
-  var fecha = prompt('Fecha limite (YYYY-MM-DD):') || '';
-  var uid = getCurrentUserId();
-  if(!uid) return;
-  var nuevo = {
-    user_id: uid,
-    titulo: titulo,
-    descripcion: descripcion,
-    meta: meta,
-    progreso: 0,
-    fecha_limite: fecha
-  };
-  supaInsert('objetivos', nuevo).then(function(saved){
-    if(saved) {
-      var lista = lsGet('user_objetivos') || [];
-      lista.push(saved);
-      lsSet('user_objetivos', lista);
-      renderObjetivos();
-    }
-  });
-}
-
-function editarObjetivo(id) {
-  var lista = lsGet('user_objetivos') || [];
-  var o = lista.find(function(x){return x.id===id;});
-  if(!o) return;
-  var nuevoProg = prompt('Actualizar progreso (actual: '+o.progreso+'):', o.progreso);
-  if(nuevoProg === null) return;
-  supaUpdateRow('objetivos', id, {progreso:parseFloat(nuevoProg)}).then(function(ok){
-    if(ok) { o.progreso=parseFloat(nuevoProg); lsSet('user_objetivos',lista); renderObjetivos(); }
-  });
-}
-
-function eliminarObjetivo(id) {
-  if(!confirm('Eliminar este objetivo?')) return;
-  supaDelete('objetivos', id).then(function(ok){
-    if(ok) {
-      var lista = lsGet('user_objetivos') || [];
-      lsSet('user_objetivos', lista.filter(function(x){return x.id!==id;}));
-      renderObjetivos();
-    }
-  });
-}
-
-// ════════════════════════════════════════════════════════════════
-// MODULO: PLAN TRADING (individual)
-// ════════════════════════════════════════════════════════════════
-function renderPlanTrading() {
-  var cont = document.getElementById('mod-plan');
-  if(!cont) return;
-  var uid = getCurrentUserId();
-  if(!uid) { cont.innerHTML='<div class="mod-header"><div class="mod-title">📋 PLAN DE TRADING</div></div><div style="padding:30px;text-align:center;color:var(--muted);">Inicia sesion.</div>'; return; }
-
-  var plan = lsGet('user_plan_trading');
-  var contenido = (plan && plan.user_id === uid) ? plan.contenido : '';
-
-  cont.innerHTML = '<div class="mod-header"><div class="mod-title">📋 PLAN DE TRADING</div><div class="mod-sub">Tu plan personal de trading</div><div class="mod-divider"></div></div>'
-    + '<textarea id="plant-content" class="pform-input" style="min-height:400px;width:100%;font-family:Inter,sans-serif;line-height:1.6;" placeholder="Escribe aqui tu plan de trading...&#10;&#10;Ejemplo:&#10;- Mi estilo: scalping en M5&#10;- Mercados: Indices sinteticos&#10;- Gestion de riesgo: 1% por operacion&#10;- Sesiones: NY y Londres&#10;- Reglas de entrada y salida...">'+contenido+'</textarea>'
-    + '<div style="margin-top:12px;text-align:right;">'
-    + '<button class="btn-action" onclick="guardarPlanTrading()" style="background:var(--blue);color:#000;font-weight:700;">💾 Guardar Plan</button>'
-    + '</div>';
-}
-
-function guardarPlanTrading() {
-  var cont = (document.getElementById('plant-content')||{}).value||'';
-  var uid = getCurrentUserId();
-  if(!uid) return;
-  var plan = lsGet('user_plan_trading');
-  if(plan && plan.id && plan.user_id === uid) {
-    supaUpdateRow('plan_trading', plan.id, {contenido:cont}).then(function(ok){
-      if(ok) { plan.contenido = cont; lsSet('user_plan_trading',plan); alert('Plan guardado.'); }
-    });
-  } else {
-    supaInsert('plan_trading', {user_id:uid, contenido:cont}).then(function(saved){
-      if(saved) { lsSet('user_plan_trading',saved); alert('Plan guardado.'); }
-    });
-  }
-}
-
-// ════════════════════════════════════════════════════════════════
-// HOOK SHOWMODULE - render correct module on click
-// ════════════════════════════════════════════════════════════════
-(function(){
-  if(typeof showModule === 'function') {
-    var _origShow_t30 = showModule;
-    showModule = function(id, title, sub) {
-      _origShow_t30(id, title, sub);
-      setTimeout(function(){
-        if(id === 'resultados') renderResultados();
-        else if(id === 'pubretiros') renderPubRetiros();
-        else if(id === 'comunidad') renderComunidad();
-        else if(id === 'interaccion') renderChatVivo();
-        else if(id === 'notas') renderNotas();
-        else if(id === 'emociones') renderEmociones();
-        else if(id === 'objetivos') renderObjetivos();
-        else if(id === 'plan') renderPlanTrading();
-      }, 100);
-    };
-  }
-})();
-
-// Override enterPanel to sync user data
+// Hook enterPanel to sync everything on login
 (function(){
   if(typeof enterPanel === 'function') {
-    var _origEP_t30 = enterPanel;
+    var _origEP_t32 = enterPanel;
     enterPanel = function(){
-      _origEP_t30();
+      _origEP_t32();
       setTimeout(function(){
-        if(typeof syncUsuarios === 'function') {
-          syncUsuarios().then(function(){
-            syncUserData();
-          });
-        } else {
-          syncUserData();
-        }
+        syncAllFromSupabase().then(function(){
+          // Re-render current module
+          if(typeof showModule === 'function' && currentModule) {
+            // Force re-render
+            console.log('Sync complete, ready to render modules');
+          }
+        });
       }, 300);
     };
   }
 })();
 
+// ════ ADMIN PUBLISH FUNCTIONS ════
+// These wrap localStorage saves with Supabase inserts for admin-published content
+
+async function adminPublishSenal(senal) {
+  var nueva = {par:senal.par,dir:senal.dir,entrada:senal.entrada,sl:senal.sl,tp:senal.tp,estado:senal.estado||'ACTIVA',nota:senal.nota||'',fecha:senal.fecha||new Date().toLocaleDateString('es-CO')};
+  var saved = await supaInsert('senales', nueva);
+  if(saved) senal.id = saved.id;
+  return saved;
+}
+
+async function adminPublishAnuncio(anuncio) {
+  var nuevo = {tipo:anuncio.tipo||'Informativo',titulo:anuncio.titulo,mensaje:anuncio.msg||anuncio.mensaje,fecha:anuncio.fecha||new Date().toLocaleDateString('es-CO')};
+  var saved = await supaInsert('anuncios', nuevo);
+  if(saved) anuncio.id = saved.id;
+  return saved;
+}
+
+async function adminPublishEvento(evento) {
+  var nuevo = {titulo:evento.titulo,tipo:evento.tipo,fecha:evento.fecha,hora:evento.hora,descripcion:evento.desc||evento.descripcion};
+  var saved = await supaInsert('eventos', nuevo);
+  if(saved) evento.id = saved.id;
+  return saved;
+}
+
+async function adminPublishAcademia(item) {
+  var nuevo = {tipo:item.tipo,titulo:item.titulo,descripcion:item.desc||item.descripcion,nivel:item.nivel,url:item.url,img:item.img,fecha:item.fecha||new Date().toLocaleDateString('es-CO')};
+  var saved = await supaInsert('academia', nuevo);
+  if(saved) item.id = saved.id;
+  return saved;
+}
+
+async function adminPublishLive(live) {
+  var nuevo = {tipo:live.tipo,titulo:live.titulo,descripcion:live.desc||live.descripcion,estado:live.estado,yt_url:live.ytUrl,zoom_url:live.zoomUrl,zoom_pass:live.zoomPass,fecha:live.fecha||new Date().toLocaleDateString('es-CO')};
+  var saved = await supaInsert('lives', nuevo);
+  if(saved) live.id = saved.id;
+  return saved;
+}
+
+// Update planes_config and refresh welcome page
+async function updatePlanConfig(planKey, datos) {
+  var planes = lsGet('planes_config') || await supaSelect('planes_config', 'order=orden.asc');
+  var p = planes.find(function(x){return x.plan_key === planKey;});
+  if(!p) return false;
+  var ok = await supaUpdateRow('planes_config', p.id, datos);
+  if(ok) {
+    Object.assign(p, datos);
+    _origLsSet('planes_config', planes);
+    refreshWelcomePlanes();
+  }
+  return ok;
+}
+
+function refreshWelcomePlanes() {
+  var planes = lsGet('planes_config') || [];
+  planes.forEach(function(p) {
+    var key = (p.plan_key||'').toLowerCase();
+    // Try multiple selectors
+    var card = document.querySelector('[data-plan="'+key+'"]') || document.querySelector('[data-plan-key="'+key+'"]');
+    if(!card) {
+      // Find by name in plan cards
+      document.querySelectorAll('.plan-card').forEach(function(c){
+        var nm = c.querySelector('.plan-nm');
+        if(nm && nm.textContent.toLowerCase() === (p.nombre||'').toLowerCase()) card = c;
+      });
+    }
+    if(card) {
+      var nm = card.querySelector('.plan-nm'); if(nm) nm.textContent = p.nombre;
+      var pr = card.querySelector('.plan-pr-amt'); if(pr) pr.textContent = p.precio;
+      var feats = card.querySelector('.plan-feats, .plan-features, .plan-benefits');
+      if(feats && p.beneficios) {
+        feats.innerHTML = p.beneficios.split('|').map(function(b){return '<li>'+b+'</li>';}).join('');
+      }
+    }
+  });
+}
+
+// Init: sync planes_config on page load
+setTimeout(function(){
+  supaSelect('planes_config', 'order=orden.asc').then(function(p){
+    if(p && p.length) { _origLsSet('planes_config', p); refreshWelcomePlanes(); }
+  });
+}, 1000);
+
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t30</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t32</div>
 </body>
 </html>
