@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t32</title>
+<title>Titanium Traders · t33</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -4531,13 +4531,22 @@ function liveMsg(id,txt,tipo){var el=document.getElementById(id);if(!el)return;e
 
 // ── ELIMINAR USUARIO ──
 function ausrEliminar(id) {
-  var users = ausrGetUsers ? ausrGetUsers() : [];
+  var users = lsGet('usuarios') || [];
   var u = users.find(function(x){return x.id===id;});
   if(!u) return;
-  if(!confirm('Eliminar a ' + u.nombre + '? Esta accion no se puede deshacer.')) return;
+  if(!confirm('Eliminar a ' + (u.nombre||'usuario') + ' permanentemente?')) return;
+  // Delete from localStorage
   lsSet('usuarios', users.filter(function(x){return x.id!==id;}));
-  lsSet('chat_' + u.nombre.replace(/\s/g,'_'), []);
-  ausrRenderCards();
+  // Delete from Supabase usuarios table
+  fetch(SUPA_URL + '/rest/v1/usuarios?id=eq.' + id, {
+    method: 'DELETE',
+    headers: {'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'}
+  }).then(function(r){
+    if(r.ok) console.log('Usuario eliminado de Supabase');
+    else console.warn('Error al eliminar:', r.status);
+  });
+  if(typeof ausrRenderCards === 'function') ausrRenderCards();
+  if(typeof aregRenderProcesados2 === 'function') aregRenderProcesados2();
 }
 
 // ── NOTIFICACIONES — mark as read on open ──
@@ -5193,8 +5202,227 @@ setTimeout(function(){
   });
 }, 1000);
 
+
+// ════════════════════════════════════════════════════════════════
+// T33 — Photo Upload + Edit/Delete + Realtime
+// ════════════════════════════════════════════════════════════════
+
+// Generic photo upload to base64 (no external storage needed)
+function uploadPhotoToBase64(inputElement, callback) {
+  if(!inputElement.files || !inputElement.files[0]) return;
+  var file = inputElement.files[0];
+  if(file.size > 5 * 1024 * 1024) {
+    alert('Imagen muy grande. Maximo 5MB.');
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    callback(e.target.result, file.name);
+  };
+  reader.readAsDataURL(file);
+}
+
+// Helper: Create a photo upload button on any container
+function attachPhotoUpload(containerId, onUpload) {
+  var cont = document.getElementById(containerId);
+  if(!cont) return;
+  // Check if already has the input
+  if(cont.querySelector('input[type="file"][data-photo-upload]')) return;
+  
+  var btn = document.createElement('button');
+  btn.className = 'btn-action sm';
+  btn.textContent = '📷 Subir foto';
+  btn.type = 'button';
+  
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.style.display = 'none';
+  input.setAttribute('data-photo-upload', 'true');
+  
+  btn.onclick = function(){ input.click(); };
+  input.onchange = function(){
+    uploadPhotoToBase64(input, function(base64, filename){
+      onUpload(base64, filename);
+    });
+  };
+  
+  cont.appendChild(btn);
+  cont.appendChild(input);
+}
+
+// ════ EDIT/DELETE FOR PUBLICATIONS ════
+function puedeEditarPub(pub) {
+  var uid = getCurrentUserId();
+  return isCurrentUserAdmin() || pub.user_id === uid;
+}
+
+function editarPublicacion(tabla, id, campos) {
+  var dataFields = {};
+  for(var key in campos) {
+    if(campos.hasOwnProperty(key)) {
+      var nuevo = prompt('Editar ' + key + ':', campos[key]);
+      if(nuevo === null) return;
+      dataFields[key] = nuevo;
+    }
+  }
+  supaUpdateRow(tabla, id, dataFields).then(function(ok){
+    if(ok) {
+      // Update local cache
+      var keys = ['pub_resultados','pub_retiros','pub_comunidad','pub_chat'];
+      keys.forEach(function(k){
+        var lista = lsGet(k) || [];
+        var idx = lista.findIndex(function(x){return x.id===id;});
+        if(idx > -1) {
+          Object.assign(lista[idx], dataFields);
+          lsSet(k, lista);
+        }
+      });
+      // Refresh visible module
+      if(typeof showModule === 'function' && currentModule) {
+        showModule(currentModule, '', '');
+      }
+      alert('Publicacion actualizada.');
+    }
+  });
+}
+
+function eliminarPublicacion(tabla, id) {
+  if(!confirm('Eliminar esta publicacion?')) return;
+  supaDelete(tabla, id).then(function(ok){
+    if(ok) {
+      var keys = ['pub_resultados','pub_retiros','pub_comunidad','pub_chat'];
+      keys.forEach(function(k){
+        var lista = lsGet(k) || [];
+        lsSet(k, lista.filter(function(x){return x.id!==id;}));
+      });
+      if(typeof showModule === 'function' && currentModule) {
+        showModule(currentModule, '', '');
+      }
+    }
+  });
+}
+
+// ════ REALTIME via Supabase polling (every 5s for active modules) ════
+var realtimePollIntervals = {};
+
+function startRealtimePoll(table, lsKey, currentModuleId, renderFn) {
+  if(realtimePollIntervals[table]) clearInterval(realtimePollIntervals[table]);
+  realtimePollIntervals[table] = setInterval(function(){
+    if(currentModule !== currentModuleId) return;
+    supaSelect(table, 'order=created_at.desc&limit=100').then(function(rows){
+      if(rows) {
+        var oldData = lsGet(lsKey) || [];
+        var newData = rows;
+        // Only re-render if there are changes
+        if(JSON.stringify(oldData.map(function(x){return x.id;})) !== JSON.stringify(newData.map(function(x){return x.id;}))) {
+          _origLsSet(lsKey, newData);
+          if(typeof renderFn === 'function') renderFn();
+          else if(typeof showModule === 'function') showModule(currentModuleId, '', '');
+        }
+      }
+    });
+  }, 5000);
+}
+
+function stopAllRealtimePolls() {
+  for(var k in realtimePollIntervals) clearInterval(realtimePollIntervals[k]);
+  realtimePollIntervals = {};
+}
+
+// Start realtime when entering panel
+(function(){
+  var _origEP_t33 = enterPanel;
+  enterPanel = function(){
+    _origEP_t33();
+    setTimeout(function(){
+      // Start polling for shared content
+      startRealtimePoll('senales', 'senales', 'senales');
+      startRealtimePoll('anuncios', 'anuncios', 'aanuncios_user');
+      startRealtimePoll('comunidad', 'pub_comunidad', 'comunidad');
+      startRealtimePoll('resultados', 'pub_resultados', 'resultados');
+      startRealtimePoll('publicar_retiros', 'pub_retiros', 'pubretiros');
+      startRealtimePoll('chat_vivo', 'pub_chat', 'interaccion');
+      startRealtimePoll('eventos', 'eventos', 'eventos');
+      startRealtimePoll('lives', 'lives', 'live');
+      startRealtimePoll('academia', 'academia', 'academia');
+    }, 1000);
+  };
+})();
+
+// ════ Hook lsSet to also save publications and user changes to Supabase ════
+(function(){
+  var _origLsSetT33 = lsSet;
+  lsSet = function(key, val) {
+    var result = _origLsSetT33(key, val);
+    // Replicate user deletion to Supabase
+    if(key === 'usuarios' && Array.isArray(val)) {
+      // Check for deleted users (compare with previous)
+      // This is handled by ausrEliminar directly, no need to re-sync here
+    }
+    return result;
+  };
+})();
+
+// ════ Better photo upload for existing modules ════
+// This hooks into existing buttons that say "subir foto"
+function fixPhotoUploadButtons() {
+  // Find buttons with photo upload intent
+  document.querySelectorAll('button, .btn-action').forEach(function(btn){
+    var txt = (btn.textContent || '').toLowerCase();
+    if(txt.indexOf('foto') > -1 || txt.indexOf('imagen') > -1 || txt.indexOf('📷') > -1 || txt.indexOf('📸') > -1) {
+      if(!btn.getAttribute('data-photo-fixed')) {
+        btn.setAttribute('data-photo-fixed', 'true');
+        var origClick = btn.onclick;
+        btn.onclick = function(e) {
+          // Try to find associated file input
+          var parent = btn.closest('div');
+          var input = parent ? parent.querySelector('input[type="file"]') : null;
+          if(!input) {
+            // Create one
+            input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.style.display = 'none';
+            document.body.appendChild(input);
+            input.onchange = function(){
+              if(input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(ev){
+                  // Find image preview or img element nearby
+                  var preview = parent ? parent.querySelector('img[id*="preview"], img[id*="comp"]') : null;
+                  if(preview) preview.src = ev.target.result;
+                  // Store in a generic var for forms
+                  window.lastUploadedPhoto = ev.target.result;
+                  // If origClick existed, call it
+                  if(origClick) origClick.call(btn, e);
+                };
+                reader.readAsDataURL(input.files[0]);
+              }
+            };
+          }
+          input.click();
+          e.preventDefault();
+          return false;
+        };
+      }
+    }
+  });
+}
+
+// Auto-fix photo buttons whenever a module is shown
+(function(){
+  if(typeof showModule === 'function') {
+    var _origShow_t33 = showModule;
+    showModule = function(id, title, sub) {
+      _origShow_t33(id, title, sub);
+      setTimeout(fixPhotoUploadButtons, 200);
+    };
+  }
+})();
+
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t32</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t33</div>
 </body>
 </html>
