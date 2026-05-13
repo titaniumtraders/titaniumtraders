@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t33</title>
+<title>Titanium Traders · t34</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -1015,7 +1015,7 @@ textarea.pform-input{resize:vertical;min-height:90px;}
           </div>
           <div class="pform-group"><label class="pform-label">Notas de la Operación</label><textarea id="op-notas" class="pform-input" placeholder="¿Qué observaste? ¿Qué aprendiste?..."></textarea></div>
           <div class="pform-group"><label class="pform-label">📸 Captura de Pantalla</label>
-            <div style="border:1px dashed var(--border);padding:20px;text-align:center;cursor:pointer;background:var(--bg2);"><div style="font-size:24px;margin-bottom:6px;">📸</div><div style="font-size:11px;color:var(--muted);">Clic para subir imagen</div></div>
+            <label for="op-img-input" style="border:1px dashed var(--border);padding:20px;text-align:center;cursor:pointer;background:var(--bg2);display:block;"><div style="font-size:24px;margin-bottom:6px;">📸</div><div style="font-size:11px;color:var(--muted);" id="op-img-label">Toca para subir imagen</div></label><input type="file" id="op-img-input" accept="image/*" style="display:none" onchange="if(this.files&&this.files[0]){var r=new FileReader();r.onload=function(e){window.opImgData=e.target.result;var l=document.getElementById('op-img-label');if(l)l.textContent='✅ '+this.files[0].name;}.bind(this);r.readAsDataURL(this.files[0]);}">
           </div>
           <div id="op-msg" class="msg-box" style="display:none;"></div><button class="btn-action" style="margin-top:8px;" onclick="guardarOperacion()">💾 GUARDAR OPERACIÓN</button>
         </div>
@@ -1244,7 +1244,7 @@ textarea.pform-input{resize:vertical;min-height:90px;}
           </div>
           <div class="pform-group"><label class="pform-label">Notas de la Operación</label><textarea id="op-notas" class="pform-input" placeholder="¿Qué observaste? ¿Qué aprendiste?..."></textarea></div>
           <div class="pform-group"><label class="pform-label">📸 Captura de Pantalla</label>
-            <div style="border:1px dashed var(--border);padding:20px;text-align:center;cursor:pointer;background:var(--bg2);"><div style="font-size:24px;margin-bottom:6px;">📸</div><div style="font-size:11px;color:var(--muted);">Clic para subir imagen</div></div>
+            <label for="op-img-input" style="border:1px dashed var(--border);padding:20px;text-align:center;cursor:pointer;background:var(--bg2);display:block;"><div style="font-size:24px;margin-bottom:6px;">📸</div><div style="font-size:11px;color:var(--muted);" id="op-img-label">Toca para subir imagen</div></label><input type="file" id="op-img-input" accept="image/*" style="display:none" onchange="if(this.files&&this.files[0]){var r=new FileReader();r.onload=function(e){window.opImgData=e.target.result;var l=document.getElementById('op-img-label');if(l)l.textContent='✅ '+this.files[0].name;}.bind(this);r.readAsDataURL(this.files[0]);}">
           </div>
           <div id="op-msg" class="msg-box" style="display:none;"></div><button class="btn-action" style="margin-top:8px;" onclick="guardarOperacion()">💾 GUARDAR OPERACIÓN</button>
         </div>
@@ -1426,7 +1426,7 @@ textarea.pform-input{resize:vertical;min-height:90px;}
           <div class="pform-group"><label class="pform-label">Monto $</label><input type="number" id="pub-retiro-monto" class="pform-input" placeholder="0.00"></div>
           <div class="pform-group"><label class="pform-label">Comentario</label><input type="text" id="pub-retiro-comentario" class="pform-input" placeholder="Comparte tu logro..."></div>
         </div>
-        <div class="pform-group"><label class="pform-label">📸 Captura</label><div style="border:1px dashed var(--border);padding:28px;text-align:center;cursor:pointer;background:var(--bg2);"><div style="font-size:24px;margin-bottom:6px;">💸</div><div style="font-size:11px;color:var(--muted);">Clic para subir imagen</div></div></div>
+        <div class="pform-group"><label class="pform-label">📸 Captura</label><label for="pubretiro-img-input" style="border:1px dashed var(--border);padding:28px;text-align:center;cursor:pointer;background:var(--bg2);display:block;"><div style="font-size:24px;margin-bottom:6px;">💸</div><div style="font-size:11px;color:var(--muted);" id="pubretiro-img-label">Toca para subir imagen</div></label><input type="file" id="pubretiro-img-input" accept="image/*" style="display:none" onchange="if(this.files&&this.files[0]){var r=new FileReader();r.onload=function(e){window.pubretiroImgData=e.target.result;var l=document.getElementById('pubretiro-img-label');if(l)l.textContent='✅ '+this.files[0].name;}.bind(this);r.readAsDataURL(this.files[0]);}"></div>
         <div id="pub-retiro-msg" class="msg-box" style="display:none;"></div>
         <button class="btn-action" onclick="publicarRetiro()">💸 PUBLICAR RETIRO</button>
       </div>
@@ -1624,9 +1624,9 @@ textarea.pform-input{resize:vertical;min-height:90px;}
           </div>
           <div class="pform-group"><label class="pform-label">Referencia</label><input type="text" id="mc-pago-ref" class="pform-input" placeholder="ID o número de transacción"></div>
           <div class="pform-group"><label class="pform-label">📸 Comprobante</label>
-            <div style="border:1px dashed var(--border);padding:20px;text-align:center;cursor:pointer;background:var(--bg2);" onclick="document.getElementById('mc-comp-input').click()">
-              <div style="font-size:24px;margin-bottom:6px;">📸</div><div style="font-size:11px;color:var(--muted);" id="mc-comp-label">Clic para subir</div>
-            </div>
+            <label for="mc-comp-input" style="border:1px dashed var(--border);padding:20px;text-align:center;cursor:pointer;background:var(--bg2);display:block;">
+              <div style="font-size:24px;margin-bottom:6px;">📸</div><div style="font-size:11px;color:var(--muted);" id="mc-comp-label">Toca para subir</div>
+            </label>
             <input type="file" id="mc-comp-input" accept="image/*" style="display:none" onchange="mcSubirComp(this)">
           </div>
           <div id="mc-pago-msg" class="msg-box" style="display:none;"></div>
@@ -1909,10 +1909,10 @@ textarea.pform-input{resize:vertical;min-height:90px;}
             <textarea class="pform-input" id="sig-nota" placeholder="Análisis y contexto de la señal..."></textarea>
           </div>
           <div class="pform-group"><label class="pform-label">📸 Imagen de la Señal</label>
-            <div style="border:1px dashed var(--border);padding:20px;text-align:center;cursor:pointer;background:var(--bg2);" onclick="document.getElementById('sig-img-input').click()">
+            <label for="sig-img-input" style="border:1px dashed var(--border);padding:20px;text-align:center;cursor:pointer;background:var(--bg2);display:block;">
               <div style="font-size:22px;margin-bottom:6px;">📸</div>
-              <div style="font-size:11px;color:var(--muted);" id="sig-img-label">Clic para subir imagen</div>
-            </div>
+              <div style="font-size:11px;color:var(--muted);" id="sig-img-label">Toca para subir imagen</div>
+            </label>
             <input type="file" id="sig-img-input" accept="image/*" style="display:none" onchange="previewSigImg(this)">
           </div>
           <div id="sig-msg" style="display:none;" class="msg-box success"></div>
@@ -1994,9 +1994,9 @@ Prioridad en retiros</textarea></div>
           <div class="pform-group"><label class="pform-label">Nivel</label><select id="ac-nivel" class="pform-input"><option>🟢 Básico</option><option>🟡 Intermedio</option><option>🔴 Avanzado</option></select></div>
           <div id="ac-url-group" class="pform-group"><label class="pform-label">URL del contenido</label><input type="text" id="ac-url" class="pform-input" placeholder="https://youtube.com/watch?v=..."></div>
           <div id="ac-file-group" class="pform-group" style="display:none;"><label class="pform-label">📸 Subir Imagen</label>
-            <div style="border:1px dashed var(--border);padding:20px;text-align:center;cursor:pointer;background:var(--bg2);" onclick="document.getElementById('ac-file-input').click()">
-              <div style="font-size:24px;margin-bottom:6px;">📸</div><div style="font-size:11px;color:var(--muted);" id="ac-file-label">Clic para subir imagen</div>
-            </div>
+            <label for="ac-file-input" style="border:1px dashed var(--border);padding:20px;text-align:center;cursor:pointer;background:var(--bg2);display:block;">
+              <div style="font-size:24px;margin-bottom:6px;">📸</div><div style="font-size:11px;color:var(--muted);" id="ac-file-label">Toca para subir imagen</div>
+            </label>
             <input type="file" id="ac-file-input" accept="image/*" style="display:none" onchange="acPreviewImg(this)">
           </div>
           <div id="ac-msg" class="msg-box" style="display:none;"></div>
@@ -2191,7 +2191,7 @@ Prioridad en retiros</textarea></div>
     </div>
     <div class="pform-group"><label class="pform-label">Referencia / ID de transacción *</label><input type="text" id="reg-referencia" class="pform-input" placeholder="ID o número de transacción"></div>
     <div class="pform-group"><label class="pform-label">📸 Comprobante de pago *</label>
-      <div style="border:1px dashed var(--border);padding:20px;text-align:center;cursor:pointer;background:var(--bg2);" onclick="document.getElementById('reg-comp-input').click()"><div style="font-size:28px;margin-bottom:6px;">📸</div><div style="font-size:11px;color:var(--muted);" id="reg-comp-label">Clic para subir comprobante</div></div>
+      <label for="reg-comp-input" style="border:1px dashed var(--border);padding:20px;text-align:center;cursor:pointer;background:var(--bg2);display:block;"><div style="font-size:28px;margin-bottom:6px;">📸</div><div style="font-size:11px;color:var(--muted);" id="reg-comp-label">Toca para subir comprobante</div></label>
       <input type="file" id="reg-comp-input" accept="image/*" style="display:none" onchange="regPreviewComp(this)">
     </div>
     <div id="regError" class="modal-err"></div>
@@ -2857,14 +2857,30 @@ function renderResultados() {
   const feed=document.getElementById('resultados-feed'); if(!feed)return;
   const resultados=lsGet('resultados')||[];
   if(!resultados.length){ feed.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">No hay resultados publicados aún.</div>'; return; }
-  feed.innerHTML=resultados.map(r=>`
+  const uid=getCurrentUserId(); const esAdmin=isCurrentUserAdmin();
+  feed.innerHTML=resultados.map(r=>{
+    const puedeMod = esAdmin || r.autor===currentUser?.name;
+    return `
     <div style="background:var(--bg3);border:1px solid var(--border);padding:20px;margin-bottom:14px;border-left:3px solid #00c864;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
         <div style="font-family:'Orbitron',sans-serif;font-size:11px;color:#00c864;letter-spacing:1px;">📊 ${r.autor}</div>
-        <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;">${r.fecha} · ${r.hora}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;">${r.fecha} · ${r.hora}</div>
+          ${puedeMod?`<button class="btn-action sm" onclick="editarResultado(${r.id})" title="Editar">✏️</button><button class="btn-action sm red" onclick="eliminarResultado(${r.id})" title="Eliminar">🗑️</button>`:''}
+        </div>
       </div>
       <div style="font-size:14px;color:var(--light);line-height:1.7;white-space:pre-wrap;">${r.desc}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+function editarResultado(id) {
+  const lista=lsGet('resultados')||[]; const r=lista.find(x=>x.id===id); if(!r)return;
+  const nuevo=prompt('Editar descripción:', r.desc); if(nuevo===null)return;
+  r.desc=nuevo.trim(); lsSet('resultados',lista); renderResultados();
+}
+function eliminarResultado(id) {
+  if(!confirm('¿Eliminar esta publicación?'))return;
+  lsSet('resultados',(lsGet('resultados')||[]).filter(x=>x.id!==id)); renderResultados();
 }
 
 // ══════════════════════════════════════
@@ -2893,15 +2909,32 @@ function renderPubRetiros() {
   const feed=document.getElementById('pubretiros-feed'); if(!feed)return;
   const retiros=lsGet('pubretiros')||[];
   if(!retiros.length){ feed.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">No hay retiros publicados aún.</div>'; return; }
-  feed.innerHTML=retiros.map(r=>`
+  const esAdmin=isCurrentUserAdmin();
+  feed.innerHTML=retiros.map(r=>{
+    const puedeMod=esAdmin||r.autor===currentUser?.name;
+    return `
     <div style="background:var(--bg3);border:1px solid var(--border);padding:20px;margin-bottom:14px;border-left:3px solid var(--gold);">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
         <div style="font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:var(--gold);">💸 $${r.monto}</div>
-        <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;">${r.fecha} · ${r.hora}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;">${r.fecha} · ${r.hora}</div>
+          ${puedeMod?`<button class="btn-action sm" onclick="editarPubRetiro(${r.id})" title="Editar">✏️</button><button class="btn-action sm red" onclick="eliminarPubRetiro(${r.id})" title="Eliminar">🗑️</button>`:''}
+        </div>
       </div>
       <div style="font-size:11px;color:var(--blue);font-family:'Orbitron',sans-serif;letter-spacing:1px;margin-bottom:6px;">${r.autor}</div>
       ${r.comentario?`<div style="font-size:13px;color:var(--light);line-height:1.7;">${r.comentario}</div>`:''}
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+function editarPubRetiro(id) {
+  const lista=lsGet('pubretiros')||[]; const r=lista.find(x=>x.id===id); if(!r)return;
+  const nm=prompt('Monto:',r.monto); if(nm===null)return;
+  const nc=prompt('Comentario:',r.comentario||''); if(nc===null)return;
+  r.monto=nm.trim(); r.comentario=nc.trim(); lsSet('pubretiros',lista); renderPubRetiros();
+}
+function eliminarPubRetiro(id) {
+  if(!confirm('¿Eliminar esta publicación?'))return;
+  lsSet('pubretiros',(lsGet('pubretiros')||[]).filter(x=>x.id!==id)); renderPubRetiros();
 }
 
 // ══════════════════════════════════════
@@ -3198,17 +3231,34 @@ function renderComunidad() {
   const feed=document.getElementById('comunidad-feed'); if(!feed)return;
   const posts=lsGet('comunidad')||[];
   if(!posts.length){ feed.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">No hay publicaciones aún. ¡Sé el primero!</div>'; return; }
-  feed.innerHTML=posts.map(p=>`
+  const esAdmin=isCurrentUserAdmin();
+  feed.innerHTML=posts.map(p=>{
+    const puedeMod=esAdmin||p.autor===currentUser?.name;
+    return `
     <div style="background:var(--bg3);border:1px solid var(--border);padding:20px;margin-bottom:14px;border-left:3px solid var(--blue);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
         <div>
           <div style="font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;">${p.titulo}</div>
           <div style="font-size:10px;color:var(--blue);margin-top:3px;">${p.categoria} · ${p.autor}</div>
         </div>
-        <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;">${p.fecha} · ${p.hora}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;">${p.fecha} · ${p.hora}</div>
+          ${puedeMod?`<button class="btn-action sm" onclick="editarPostComunidad(${p.id})" title="Editar">✏️</button><button class="btn-action sm red" onclick="eliminarPostComunidad(${p.id})" title="Eliminar">🗑️</button>`:''}
+        </div>
       </div>
       <div style="font-size:13px;color:var(--light);line-height:1.7;white-space:pre-wrap;">${p.contenido}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+function editarPostComunidad(id) {
+  const lista=lsGet('comunidad')||[]; const p=lista.find(x=>x.id===id); if(!p)return;
+  const nt=prompt('Título:',p.titulo); if(nt===null)return;
+  const nc=prompt('Contenido:',p.contenido); if(nc===null)return;
+  p.titulo=nt.trim(); p.contenido=nc.trim(); lsSet('comunidad',lista); renderComunidad();
+}
+function eliminarPostComunidad(id) {
+  if(!confirm('¿Eliminar esta publicación?'))return;
+  lsSet('comunidad',(lsGet('comunidad')||[]).filter(x=>x.id!==id)); renderComunidad();
 }
 
 // ══════════════════════════════════════
@@ -3229,15 +3279,26 @@ function renderChatVivo() {
   const box=document.getElementById('chat-vivo-messages'); if(!box)return;
   const msgs=lsGet('chat_vivo')||[];
   if(!msgs.length){ box.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px;text-align:center;">No hay mensajes aún.</div>'; return; }
+  const esAdmin=isCurrentUserAdmin();
   const esYo=m=>m.autor===currentUser?.name;
-  box.innerHTML=msgs.map(m=>`
+  box.innerHTML=msgs.map(m=>{
+    const puedeMod=esAdmin||esYo(m);
+    return `
     <div style="display:flex;flex-direction:column;align-items:${esYo(m)?'flex-end':'flex-start'};margin-bottom:10px;">
-      <div style="max-width:75%;background:${esYo(m)?'rgba(0,128,255,0.18)':'var(--bg2)'};border:1px solid ${esYo(m)?'var(--blue2)':'var(--border)'};padding:10px 14px;border-radius:2px;">
-        <div style="font-size:9px;color:var(--blue);font-family:'Orbitron',sans-serif;margin-bottom:4px;">${m.autor} · ${m.hora}</div>
+      <div style="max-width:75%;background:${esYo(m)?'rgba(0,128,255,0.18)':'var(--bg2)'};border:1px solid ${esYo(m)?'var(--blue2)':'var(--border)'};padding:10px 14px;border-radius:2px;position:relative;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:4px;">
+          <div style="font-size:9px;color:var(--blue);font-family:'Orbitron',sans-serif;">${m.autor} · ${m.hora}</div>
+          ${puedeMod?`<button class="btn-action sm red" style="padding:2px 6px;font-size:10px;min-width:auto;" onclick="eliminarMensajeChat(${m.id})" title="Eliminar">🗑️</button>`:''}
+        </div>
         <div style="font-size:13px;color:var(--white);">${m.texto}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   box.scrollTop=box.scrollHeight;
+}
+function eliminarMensajeChat(id) {
+  if(!confirm('¿Eliminar este mensaje?'))return;
+  lsSet('chat_vivo',(lsGet('chat_vivo')||[]).filter(x=>x.id!==id)); renderChatVivo();
 }
 
 // ══════════════════════════════════════
@@ -5332,21 +5393,20 @@ function stopAllRealtimePolls() {
 
 // Start realtime when entering panel
 (function(){
-  var _origEP_t33 = enterPanel;
+  var _origEP_t34 = enterPanel;
   enterPanel = function(){
-    _origEP_t33();
+    _origEP_t34();
     setTimeout(function(){
-      // Start polling for shared content
-      startRealtimePoll('senales', 'senales', 'senales');
-      startRealtimePoll('anuncios', 'anuncios', 'aanuncios_user');
-      startRealtimePoll('comunidad', 'pub_comunidad', 'comunidad');
-      startRealtimePoll('resultados', 'pub_resultados', 'resultados');
-      startRealtimePoll('publicar_retiros', 'pub_retiros', 'pubretiros');
-      startRealtimePoll('chat_vivo', 'pub_chat', 'interaccion');
-      startRealtimePoll('eventos', 'eventos', 'eventos');
-      startRealtimePoll('lives', 'lives', 'live');
-      startRealtimePoll('academia', 'academia', 'academia');
-    }, 1000);
+      startRealtimePoll('senales',            'senales',      'senales',    renderSenalesUsuario);
+      startRealtimePoll('anuncios',           'anuncios',     'aanuncios_user', renderAnunciosUser);
+      startRealtimePoll('comunidad',          'comunidad',    'comunidad',  renderComunidad);
+      startRealtimePoll('resultados',         'resultados',   'resultados', renderResultados);
+      startRealtimePoll('publicar_retiros',   'pubretiros',   'pubretiros', renderPubRetiros);
+      startRealtimePoll('chat_vivo',          'chat_vivo',    'interaccion',renderChatVivo);
+      startRealtimePoll('eventos',            'eventos',      'eventos');
+      startRealtimePoll('lives',              'lives',        'live');
+      startRealtimePoll('academia',           'academia',     'academia');
+    }, 1200);
   };
 })();
 
@@ -5423,6 +5483,6 @@ function fixPhotoUploadButtons() {
 
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t33</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t34</div>
 </body>
 </html>
