@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t43</title>
+<title>Titanium Traders · t44</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -2387,8 +2387,7 @@ let currentUser = null;
 function sameId(a,b){return String(a)===String(b);}
 
 function mapResultado(r) {
-  var f=r.fotos; if(typeof f==='string'){try{f=JSON.parse(f);}catch(e){f=[];}} 
-  return {id:r.id, desc:r.desc||r.descripcion||'', fotos:f||[], autor:r.autor||'', fecha:r.fecha||'', hora:r.hora||''};
+  return {id:r.id, desc:r.descripcion||r.titulo||r.desc||'', fotos:r.imagen?[r.imagen]:[], autor:r.user_nombre||r.autor||'', fecha:r.fecha||'', hora:''};
 }
 function mapRetiro(r) {
   var f=r.fotos; if(typeof f==='string'){try{f=JSON.parse(f);}catch(e){f=[];}}
@@ -2399,7 +2398,7 @@ function mapComunidad(p) {
   return {id:p.id, titulo:p.titulo||'', contenido:p.contenido||'', categoria:p.categoria||'General', fotos:f||[], autor:p.autor||'', fecha:p.fecha||'', hora:p.hora||''};
 }
 function mapChat(m) {
-  return {id:m.id, texto:m.texto||'', foto:m.foto||null, autor:m.autor||'', hora:m.hora||''};
+  return {id:m.id, texto:m.texto||'', foto:null, autor:m.user_nombre||m.autor||'', hora:m.fecha||''};
 }
 function normNombre(s) { return (s||'').trim().toLowerCase(); }
 function esAutor(item) {
@@ -3052,7 +3051,8 @@ function publicarResultado() {
   var fecha=new Date().toLocaleDateString('es-CO');
   var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
   msg.textContent='⏳ Publicando...';msg.className='msg-box success';msg.style.display='block';
-  supaInsert('resultados',{desc:desc,autor:autor,fecha:fecha}).then(function(saved){
+  var uid=getCurrentUserId()||'';
+  supaInsert('resultados',{user_id:uid,user_nombre:autor,titulo:desc,descripcion:desc,imagen:fotos&&fotos[0]?fotos[0]:null,fecha:fecha}).then(function(saved){
     if(!saved){msg.textContent='❌ Error al publicar.';return;}
     var lista=lsGet('resultados')||[];
     lista.unshift(mapResultado(Object.assign({fotos:JSON.stringify(fotos)},saved,{desc:desc,autor:autor,fecha:fecha,hora:hora})));
@@ -3070,7 +3070,7 @@ function editarResultado(id){
   if(!puedeModificar(r)){alert('No tienes permiso.');return;}
   var nd=prompt('Descripción:',r.desc);if(nd===null)return;
   r.desc=nd.trim();
-  supaUpdateRow('resultados',id,{desc:r.desc}).catch(function(){});
+  supaUpdateRow('resultados',id,{descripcion:r.desc,titulo:r.desc}).catch(function(){});
   _origLsSet('resultados',lista);renderResultados();
 }
 function eliminarResultado(id){
@@ -3100,7 +3100,8 @@ function publicarRetiro() {
   var fecha=new Date().toLocaleDateString('es-CO');
   var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
   msg.textContent='⏳ Publicando...';msg.className='msg-box success';msg.style.display='block';
-  supaInsert('publicar_retiros',{monto:monto,comentario:comentario,autor:autor,fecha:fecha}).then(function(saved){
+  var uid=getCurrentUserId()||'';
+  supaInsert('publicar_retiros',{user_id:uid,user_nombre:autor,monto:monto,descripcion:comentario,broker:'',imagen:fotos&&fotos[0]?fotos[0]:null,fecha:fecha}).then(function(saved){
     if(!saved){msg.textContent='❌ Error al publicar.';return;}
     var retiros=lsGet('pubretiros')||[];
     retiros.unshift(mapRetiro(Object.assign({fotos:JSON.stringify(fotos)},saved,{monto:monto,comentario:comentario,autor:autor,fecha:fecha,hora:hora})));
@@ -3120,7 +3121,7 @@ function editarPubRetiro(id){
   var nm=prompt('Monto:',r.monto);if(nm===null)return;
   var nc=prompt('Comentario:',r.comentario||'');if(nc===null)return;
   r.monto=nm.trim();r.comentario=nc.trim();
-  supaUpdateRow('publicar_retiros',id,{monto:r.monto,comentario:r.comentario}).catch(function(){});
+  supaUpdateRow('publicar_retiros',id,{monto:r.monto,descripcion:r.comentario}).catch(function(){});
   _origLsSet('pubretiros',lista);renderPubRetiros();
 }
 function eliminarPubRetiro(id){
@@ -3430,7 +3431,8 @@ function publicarComunidad() {
   var fecha=new Date().toLocaleDateString('es-CO');
   var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
   if(msg){msg.textContent='⏳ Publicando...';msg.className='msg-box success';msg.style.display='block';}
-  supaInsert('comunidad',{titulo:titulo,contenido:contenido,autor:autor,fecha:fecha}).then(function(saved){
+  var uid=getCurrentUserId()||'';
+  supaInsert('comunidad',{user_id:uid,user_nombre:autor,texto:titulo+(contenido?'\n'+contenido:''),imagen:fotos&&fotos[0]?fotos[0]:null,fecha:fecha}).then(function(saved){
     if(!saved){if(msg)msg.textContent='❌ Error al publicar.';return;}
     var posts=lsGet('comunidad')||[];
     posts.unshift(mapComunidad(Object.assign({fotos:JSON.stringify(fotos)},saved,{titulo:titulo,contenido:contenido,categoria:categoria,autor:autor,fecha:fecha,hora:hora})));
@@ -3450,7 +3452,7 @@ function editarPostComunidad(id){
   var nt=prompt('Título:',p.titulo);if(nt===null)return;
   var nc=prompt('Contenido:',p.contenido||'');if(nc===null)return;
   p.titulo=nt.trim();p.contenido=nc.trim();
-  supaUpdateRow('comunidad',id,{titulo:p.titulo,contenido:p.contenido}).catch(function(){});
+  supaUpdateRow('comunidad',id,{texto:p.titulo+(p.contenido?'\n'+p.contenido:'')}).catch(function(){});
   _origLsSet('comunidad',lista);renderComunidad();
 }
 function eliminarPostComunidad(id){
@@ -3484,7 +3486,8 @@ function enviarChatVivo() {
   var autor=currentUser&&currentUser.name?currentUser.name:'TRADER';
   var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
   input.value='';
-  supaInsert('chat_vivo',{texto:texto,autor:autor}).then(function(saved){
+  var uid=getCurrentUserId()||'';
+  supaInsert('chat_vivo',{user_id:uid,user_nombre:autor,texto:texto,fecha:fecha}).then(function(saved){
     var msgs=lsGet('chat_vivo')||[];
     msgs.push({id:saved?saved.id:Date.now(),texto:texto,foto:null,autor:autor,hora:hora});
     if(msgs.length>200)msgs.splice(0,msgs.length-200);
@@ -3500,7 +3503,9 @@ function enviarFotoChat(input) {
     var autor=currentUser&&currentUser.name?currentUser.name:'TRADER';
     var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
     input.value='';
-    supaInsert('chat_vivo',{texto:'[foto]',autor:autor}).then(function(saved){
+    var uidf=getCurrentUserId()||'';
+    var fechaf=new Date().toLocaleDateString('es-CO');
+    supaInsert('chat_vivo',{user_id:uidf,user_nombre:autor,texto:'📸 Imagen',fecha:fechaf}).then(function(saved){
       var msgs=lsGet('chat_vivo')||[];
       msgs.push({id:saved?saved.id:Date.now(),texto:'',foto:foto,autor:autor,hora:hora});
       if(msgs.length>200)msgs.splice(0,msgs.length-200);
@@ -5452,13 +5457,13 @@ async function syncAllFromSupabase() {
 
     // Public posts
     var resultados = await supaSelect('resultados', 'order=created_at.desc');
-    if(resultados) _origLsSet('resultados', resultados.map(function(r){var f=r.fotos;if(typeof f==='string'){try{f=JSON.parse(f);}catch(e){f=[];}}return {id:r.id,desc:r.desc||r.descripcion||'',fotos:f||[],autor:r.autor||'',fecha:r.fecha||'',hora:r.hora||''};}));
+    if(resultados) _origLsSet('resultados', resultados.map(function(r){return {id:r.id,desc:r.descripcion||r.titulo||'',fotos:r.imagen?[r.imagen]:[],autor:r.user_nombre||'',fecha:r.fecha||'',hora:''};}));
     var retiros = await supaSelect('publicar_retiros', 'order=created_at.desc');
-    if(retiros) _origLsSet('pubretiros', retiros.map(function(r){var f=r.fotos;if(typeof f==='string'){try{f=JSON.parse(f);}catch(e){f=[];}}return {id:r.id,monto:r.monto||0,comentario:r.comentario||'',fotos:f||[],autor:r.autor||'',fecha:r.fecha||'',hora:r.hora||''};}));
+    if(retiros) _origLsSet('pubretiros', retiros.map(function(r){return {id:r.id,monto:r.monto||0,comentario:r.descripcion||'',fotos:r.imagen?[r.imagen]:[],autor:r.user_nombre||'',fecha:r.fecha||'',hora:''};}));
     var com = await supaSelect('comunidad', 'order=created_at.desc');
-    if(com) _origLsSet('comunidad', com.map(function(p){var f=p.fotos;if(typeof f==='string'){try{f=JSON.parse(f);}catch(e){f=[];}}return {id:p.id,titulo:p.titulo||'',contenido:p.contenido||'',categoria:p.categoria||'General',fotos:f||[],autor:p.autor||'',fecha:p.fecha||'',hora:p.hora||''};}));
+    if(com) _origLsSet('comunidad', com.map(function(p){var txt=p.texto||'';var nl=txt.indexOf('\n');var tit=nl>-1?txt.substring(0,nl):txt;var cont=nl>-1?txt.substring(nl+1):'';return {id:p.id,titulo:tit,contenido:cont,categoria:'General',fotos:p.imagen?[p.imagen]:[],autor:p.user_nombre||'',fecha:p.fecha||'',hora:''};}));
     var chat = await supaSelect('chat_vivo', 'order=created_at.asc&limit=100');
-    if(chat) _origLsSet('chat_vivo', chat.map(function(m){return {id:m.id,texto:m.texto||'',foto:m.foto||null,autor:m.autor||'',hora:m.hora||''};}));
+    if(chat) _origLsSet('chat_vivo', chat.map(function(m){return {id:m.id,texto:m.texto||'',foto:null,autor:m.user_nombre||'',hora:m.fecha||''};}));
 
     // Planes config
     var planes = await supaSelect('planes_config', 'order=orden.asc');
@@ -5831,6 +5836,6 @@ document.addEventListener('click', function(e) {
 
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t43</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t44</div>
 </body>
 </html>
