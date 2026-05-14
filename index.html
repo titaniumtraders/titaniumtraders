@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t39</title>
+<title>Titanium Traders · t41</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -2553,6 +2553,14 @@ function lsSet(key, val) {
   try { localStorage.setItem('tt_' + key, JSON.stringify(val)); } catch(e){}
 }
 
+// ── Claves con prefijo de usuario (módulos individuales) ──
+function userKey(key) {
+  var uid = currentUser ? (currentUser.isDev ? 'dev1739' : currentUser.name.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20)) : 'guest';
+  return uid + '_' + key;
+}
+function lsGetU(key) { return lsGet(userKey(key)); }
+function lsSetU(key, val) { lsSet(userKey(key), val); }
+
 // ══════════════════════════════════════
 //  EVENTOS
 // ══════════════════════════════════════
@@ -2808,11 +2816,11 @@ function guardarNota() {
   var contenido=document.getElementById('nota-contenido').value.trim();
   var msg=document.getElementById('nota-msg');
   if(!titulo||!contenido){msg.textContent='⚠️ Completa el título y el contenido.';msg.className='msg-box error';msg.style.display='block';setTimeout(function(){msg.style.display='none';},3000);return;}
-  var notas=lsGet('notas')||[];
+  var notas=lsGetU('notas')||[];
   notas.unshift({id:Date.now(),titulo:titulo,contenido:contenido,foto:_notaFotoData||null,
     fecha:new Date().toLocaleDateString('es-CO'),
     hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()});
-  lsSet('notas',notas);
+  lsSetU('notas',notas);
   document.getElementById('nota-titulo').value='';
   document.getElementById('nota-contenido').value='';
   _notaFotoData=null;
@@ -2823,11 +2831,11 @@ function guardarNota() {
   renderNotas();
 }
 function eliminarNota(id) {
-  lsSet('notas',(lsGet('notas')||[]).filter(function(n){return n.id!==id;}));renderNotas();
+  lsSetU('notas',(lsGetU('notas')||[]).filter(function(n){return n.id!==id;}));renderNotas();
 }
 function renderNotas() {
   var grid=document.getElementById('notas-grid');if(!grid)return;
-  var notas=lsGet('notas')||[];
+  var notas=lsGetU('notas')||[];
   if(!notas.length){grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px 0;">No tienes notas aún.</div>';return;}
   grid.innerHTML=notas.map(function(n){
     return '<div style="background:var(--bg3);border:1px solid var(--border);border-top:3px solid var(--blue);overflow:hidden;position:relative;">'
@@ -2853,7 +2861,7 @@ function guardarEmocion() {
     msg.textContent='⚠️ Selecciona tu estado emocional.'; msg.className='msg-box error'; msg.style.display='block';
     setTimeout(()=>{ msg.style.display='none'; },3000); return;
   }
-  const emociones = lsGet('emociones') || [];
+  const emociones = lsGetU('emociones') || [];
   // Extraer emoji y label de cada opción seleccionada
   const partes = [...selectedEls].map(el => {
     const txt = el.textContent.trim();
@@ -2867,7 +2875,7 @@ function guardarEmocion() {
   emociones.unshift({ id: Date.now(), emoji: emojiStr, label: labelStr, texto,
     fecha: new Date().toLocaleDateString('es-CO'),
     hora:  new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase() });
-  lsSet('emociones', emociones);
+  lsSetU('emociones', emociones);
   document.querySelectorAll('.emoji-opt').forEach(b=>b.classList.remove('selected'));
   document.getElementById('emocion-texto').value='';
   msg.textContent='✅ Registro emocional guardado.'; msg.className='msg-box success'; msg.style.display='block';
@@ -2875,11 +2883,11 @@ function guardarEmocion() {
   renderEmociones();
 }
 function eliminarEmocion(id) {
-  lsSet('emociones', (lsGet('emociones')||[]).filter(e=>e.id!==id)); renderEmociones();
+  lsSetU('emociones', (lsGetU('emociones')||[]).filter(e=>e.id!==id)); renderEmociones();
 }
 function renderEmociones() {
   const grid=document.getElementById('emociones-grid'); if(!grid)return;
-  const emociones=lsGet('emociones')||[];
+  const emociones=lsGetU('emociones')||[];
   if(!emociones.length){ grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px 0;">No hay registros emocionales aún.</div>'; return; }
   grid.innerHTML=emociones.map(e=>`
     <div style="background:var(--bg3);border:1px solid var(--border);padding:20px;position:relative;">
@@ -2948,7 +2956,9 @@ function comFiltrar(cat, btn) {
 
 function _comCard(item, accentColor, badgeText, badgeColor) {
   var esAdmin=typeof isCurrentUserAdmin==='function'?isCurrentUserAdmin():false;
-  var esDueno=item.autor===(currentUser&&currentUser.name);
+  var nombreActual=(currentUser&&currentUser.name||''). trim().toLowerCase();
+  var autorItem=(item.autor||''). trim().toLowerCase();
+  var esDueno=nombreActual && nombreActual===autorItem;
   var puedeMod=esAdmin||esDueno;
   var fotos=item.fotos||[];
   var div=document.createElement('div');
@@ -3112,10 +3122,10 @@ function guardarObjetivo() {
     msg.textContent='⚠️ Completa el título y la meta.'; msg.className='msg-box error'; msg.style.display='block';
     setTimeout(()=>{ msg.style.display='none'; },3000); return;
   }
-  const objetivos = lsGet('objetivos') || [];
+  const objetivos = lsGetU('objetivos') || [];
   objetivos.unshift({ id: Date.now(), titulo, tipo, meta, periodo, fechaInicio, fechaFin,
     fecha: new Date().toLocaleDateString('es-CO') });
-  lsSet('objetivos', objetivos);
+  lsSetU('objetivos', objetivos);
   ['obj-titulo','obj-meta','obj-fecha-inicio','obj-fecha-fin'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('obj-tipo').selectedIndex=0;
   document.getElementById('obj-periodo').selectedIndex=0;
@@ -3124,11 +3134,11 @@ function guardarObjetivo() {
   renderObjetivos();
 }
 function eliminarObjetivo(id) {
-  lsSet('objetivos', (lsGet('objetivos')||[]).filter(o=>o.id!==id)); renderObjetivos();
+  lsSetU('objetivos', (lsGetU('objetivos')||[]).filter(o=>o.id!==id)); renderObjetivos();
 }
 function renderObjetivos() {
   const grid=document.getElementById('objetivos-grid'); if(!grid)return;
-  const objetivos=lsGet('objetivos')||[];
+  const objetivos=lsGetU('objetivos')||[];
   if(!objetivos.length){ grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px 0;">No tienes objetivos aún. ¡Crea el primero!</div>'; return; }
   grid.innerHTML=objetivos.map(o=>`
     <div style="background:var(--bg3);border:1px solid var(--border);padding:24px;border-top:3px solid var(--gold);position:relative;">
@@ -3154,12 +3164,12 @@ function guardarPlan() {
     fecha: new Date().toLocaleDateString('es-CO'),
     hora:  new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()
   };
-  lsSet('plan', plan);
+  lsSetU('plan', plan);
   const msg=document.getElementById('plan-msg');
   if(msg){ msg.textContent='✅ Plan de trading guardado correctamente.'; msg.className='msg-box success'; msg.style.display='block'; setTimeout(()=>{ msg.style.display='none'; },3500); }
 }
 function cargarPlan() {
-  const plan=lsGet('plan'); if(!plan)return;
+  const plan=lsGetU('plan'); if(!plan)return;
   const ids=['plan-estrategia','plan-entrada','plan-salida','plan-riesgo','plan-emocional','plan-notas-extra'];
   const keys=['estrategia','entrada','salida','riesgo','emocional','notasExtra'];
   ids.forEach((id,i)=>{ const el=document.getElementById(id); if(el&&plan[keys[i]])el.value=plan[keys[i]]; });
@@ -3184,9 +3194,9 @@ function guardarOperacion() {
     if(msg){msg.textContent='⚠️ Completa al menos el símbolo y el resultado.'; msg.className='msg-box error'; msg.style.display='block'; setTimeout(()=>{ msg.style.display='none'; },3000);} return;
   }
   const key='operaciones_'+currentCuentaNombre.replace(/\s/g,'_');
-  const ops=lsGet(key)||[];
+  const ops=lsGetU(key)||[];
   ops.unshift({ id:Date.now(), fecha, simbolo, dir, lote, entrada, cierre, resultado:parseFloat(resultado)||0, emocion, notas:opNotas });
-  lsSet(key, ops);
+  lsSetU(key, ops);
   ['op-fecha','op-lote','op-entrada','op-cierre','op-resultado','op-notas'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   if(msg){msg.textContent='✅ Operación guardada.'; msg.className='msg-box success'; msg.style.display='block'; setTimeout(()=>{ msg.style.display='none'; },3000);}
   renderOperaciones();
@@ -3198,7 +3208,7 @@ function guardarOperacion() {
 function renderOperaciones(filtro) {
   const tabla = document.getElementById('ops-tabla'); if(!tabla) return;
   const key = 'operaciones_' + currentCuentaNombre.replace(/\s/g,'_');
-  let ops = lsGet(key) || [];
+  let ops = lsGetU(key) || [];
   
   // Apply text search filter
   if(filtro && filtro.trim()) {
@@ -3294,7 +3304,7 @@ function guardarRetiroCuenta() {
     if(msg){msg.textContent='⚠️ Ingresa el monto del retiro.'; msg.className='msg-box error'; msg.style.display='block'; setTimeout(()=>{ msg.style.display='none'; },3000);} return;
   }
   const key='retiros_'+currentCuentaNombre.replace(/\s/g,'_');
-  const retiros=lsGet(key)||[];
+  const retiros=lsGetU(key)||[];
   retiros.unshift({ id:Date.now(), fecha, monto:parseFloat(monto)||0, metodo, ref,
     fechaReg: new Date().toLocaleDateString('es-CO') });
   lsSet(key, retiros);
@@ -3307,7 +3317,7 @@ function guardarRetiroCuenta() {
 function renderRetirosCuenta() {
   const tarjetas=document.getElementById('retiros-tarjetas'); if(!tarjetas)return;
   const key='retiros_'+currentCuentaNombre.replace(/\s/g,'_');
-  const retiros=lsGet(key)||[];
+  const retiros=lsGetU(key)||[];
   if(!retiros.length){ tarjetas.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px;">No hay retiros registrados.</div>'; return; }
   tarjetas.innerHTML=retiros.map(r=>{
     const monto = parseFloat(r.monto)||0;
@@ -3339,7 +3349,7 @@ function guardarConfigCuenta() {
   const riesgo = document.getElementById('config-riesgo')?.value || '';
   const msg    = document.getElementById('config-msg');
   const key='config_'+currentCuentaNombre.replace(/\s/g,'_');
-  lsSet(key, { nombre, broker, tamano, fecha, tipo, riesgo });
+  lsSetU(key, { nombre, broker, tamano, fecha, tipo, riesgo });
   // Actualizar nombre en el array de cuentas si cambió
   if (nombre && nombre !== currentCuentaNombre) {
     const tipoCuenta = currentCuentaTipo || 'demo';
@@ -3524,10 +3534,10 @@ showModule = function(id, title, sub) {
 const MAX_SLOTS = 5;
 
 function getCuentasData(tipo) {
-  return lsGet('cuentas_' + tipo) || Array(MAX_SLOTS).fill(null);
+  return lsGetU('cuentas_' + tipo) || Array(MAX_SLOTS).fill(null);
 }
 function setCuentasData(tipo, data) {
-  lsSet('cuentas_' + tipo, data);
+  lsSetU('cuentas_' + tipo, data);
 }
 
 function renderCuentas() {
@@ -3543,8 +3553,8 @@ function renderCuentas() {
     grid.innerHTML = cuentas.map((c, i) => {
       if (c && c.nombre) {
         // Tarjeta con datos
-        const cfg = lsGet('config_' + c.nombre.replace(/\s/g,'_')) || {};
-        const ops = lsGet('operaciones_' + c.nombre.replace(/\s/g,'_')) || [];
+        const cfg = lsGetU('config_' + c.nombre.replace(/\s/g,'_')) || {};
+        const ops = lsGetU('operaciones_' + c.nombre.replace(/\s/g,'_')) || [];
         const broker = cfg.broker || c.broker || '—';
         const tamano = cfg.tamano || c.tamano || '—';
         return `
@@ -3603,7 +3613,7 @@ function abrirCuenta(nombre, tipo, tabInicial) {
   }
 
   // Info encabezado desde config guardada
-  const cfg = lsGet('config_' + nombre.replace(/\s/g,'_')) || {};
+  const cfg = lsGetU('config_' + nombre.replace(/\s/g,'_')) || {};
   actualizarEncabezadoCuenta(cfg);
 
   // Activar tab correcto
@@ -3689,9 +3699,9 @@ document.addEventListener('DOMContentLoaded', () => { renderCuentas(); });
 let calMesOffset = 0; // 0 = mes actual
 
 function calcularStats() {
-  const ops     = lsGet('operaciones_' + currentCuentaNombre.replace(/\s/g,'_')) || [];
-  const retiros = lsGet('retiros_'     + currentCuentaNombre.replace(/\s/g,'_')) || [];
-  const cfg     = lsGet('config_'      + currentCuentaNombre.replace(/\s/g,'_')) || {};
+  const ops     = lsGetU('operaciones_' + currentCuentaNombre.replace(/\s/g,'_')) || [];
+  const retiros = lsGetU('retiros_'     + currentCuentaNombre.replace(/\s/g,'_')) || [];
+  const cfg     = lsGetU('config_'      + currentCuentaNombre.replace(/\s/g,'_')) || {};
   const capital = parseFloat(cfg.tamano) || 0;
 
   const totalResultado = ops.reduce((s, o) => s + (parseFloat(o.resultado) || 0), 0);
@@ -4092,10 +4102,10 @@ function mcEnviarMsg(){
 }
 function mcRenderActividad(){
   var set=function(id,v){var el=document.getElementById(id);if(el)el.textContent=v;};
-  set('act-notas',(lsGet('notas')||[]).length);set('act-emociones',(lsGet('emociones')||[]).length);
+  set('act-notas',(lsGetU('notas')||[]).length);set('act-emociones',(lsGet('emociones')||[]).length);
   set('act-resultados',(lsGet('resultados')||[]).length);set('act-posts',(lsGet('comunidad')||[]).length);
   set('act-retiros',(lsGet('pubretiros')||[]).length);set('act-objetivos',(lsGet('objetivos')||[]).length);
-  var t=0;['demo','real'].forEach(function(tp){for(var i=0;i<5;i++)t+=(lsGet('operaciones_'+tp+'_'+i)||[]).length;});set('act-ops',t);
+  var t=0;['demo','real'].forEach(function(tp){for(var i=0;i<5;i++)t+=(lsGetU('operaciones_'+tp+'_'+i)||[]).length;});set('act-ops',t);
 }
 function mcShowMsg(id,txt,tipo){var el=document.getElementById(id);if(!el)return;el.textContent=txt;el.className='msg-box '+(tipo==='error'?'error':'success');el.style.display='block';setTimeout(function(){el.style.display='none';},3000);}
 
@@ -5018,11 +5028,11 @@ function dashRender(){
   if(el('dash-plan'))el('dash-plan').textContent=plan;
   if(el('dash-vence')){if(vence){try{var dias=Math.max(0,Math.round((new Date(vence)-new Date())/864e5));el('dash-vence').textContent=dias+' días';el('dash-vence').style.color=dias<7?'#ff6b6b':dias<15?'var(--gold)':'var(--white)';}catch(e){el('dash-vence').textContent=vence;}}else el('dash-vence').textContent='—';}
   var senales=lsGet('senales')||[];if(el('dash-senales-hoy'))el('dash-senales-hoy').textContent=senales.filter(function(s){return s.estado==='ACTIVA';}).length;
-  var tPnl=0,tCap=0;['demo','real'].forEach(function(tipo){for(var i=0;i<5;i++){var ops=lsGet('operaciones_'+tipo+'_'+i)||[];var c=(lsGet('cuentas_'+tipo)||[])[i];if(c)tCap+=parseFloat(c.tamano||0);var now=new Date();ops.filter(function(o){var d=new Date(o.fecha||'');return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).forEach(function(o){tPnl+=parseFloat(o.resultado||0);});}});
+  var tPnl=0,tCap=0;['demo','real'].forEach(function(tipo){for(var i=0;i<5;i++){var ops=lsGetU('operaciones_'+tipo+'_'+i)||[];var c=(lsGetU('cuentas_'+tipo)||[])[i];if(c)tCap+=parseFloat(c.tamano||0);var now=new Date();ops.filter(function(o){var d=new Date(o.fecha||'');return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).forEach(function(o){tPnl+=parseFloat(o.resultado||0);});}});
   if(el('dash-rendimiento')){var pct=tCap>0?((tPnl/tCap)*100).toFixed(1):0;el('dash-rendimiento').textContent=(pct>=0?'+':'')+pct+'%';el('dash-rendimiento').style.color=pct>=0?'#00c864':'#ff6b6b';}
-  var cA=0;['demo','real'].forEach(function(t){(lsGet('cuentas_'+t)||[]).forEach(function(c){if(c&&c.nombre)cA++;});});if(el('dash-cuentas'))el('dash-cuentas').textContent=cA;
-  var objs=lsGet('objetivos')||[];if(el('dash-objetivos'))el('dash-objetivos').textContent=objs.length>0?objs.filter(function(o){return parseFloat(o.progreso||0)>=parseFloat(o.meta||1);}).length+'/'+objs.length:'0';
-  var ems=lsGet('emociones')||[];if(el('dash-emocion'))el('dash-emocion').textContent=ems.length&&ems[0].emojis?ems[0].emojis[0].split(' ')[0]:'—';
+  var cA=0;['demo','real'].forEach(function(t){(lsGetU('cuentas_'+t)||[]).forEach(function(c){if(c&&c.nombre)cA++;});});if(el('dash-cuentas'))el('dash-cuentas').textContent=cA;
+  var objs=lsGetU('objetivos')||[];if(el('dash-objetivos'))el('dash-objetivos').textContent=objs.length>0?objs.filter(function(o){return parseFloat(o.progreso||0)>=parseFloat(o.meta||1);}).length+'/'+objs.length:'0';
+  var ems=lsGetU('emociones')||[];if(el('dash-emocion'))el('dash-emocion').textContent=ems.length&&ems[0].emojis?ems[0].emojis[0].split(' ')[0]:'—';
   if(el('dash-senales-lista')){if(!senales.length){el('dash-senales-lista').innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px;">Sin señales publicadas</div>';}else{el('dash-senales-lista').innerHTML='<table class="tt-table"><thead><tr><th>Símbolo</th><th>Tipo</th><th>Entrada</th><th>Estado</th></tr></thead><tbody>'+senales.slice(0,4).map(function(s){var buy=(s.dir||'').includes('BUY');return'<tr><td>'+(s.par||'')+'</td><td><span style="color:'+(buy?'#00c864':'#ff6b6b')+';font-weight:700">'+(buy?'▲ BUY':'▼ SELL')+'</span></td><td>'+(s.entrada||'')+'</td><td><span class="badge '+(s.estado==='ACTIVA'?'badge-green':s.estado==='CERRADA'?'badge-blue':'badge-gold')+'">'+(s.estado||'')+'</span></td></tr>';}).join('')+'</tbody></table>';}}
   var anuncios=lsGet('anuncios')||[];if(el('dash-anuncios-lista')){if(!anuncios.length){el('dash-anuncios-lista').innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px;">Sin anuncios</div>';}else{el('dash-anuncios-lista').innerHTML=anuncios.slice(0,3).map(function(a){return'<div style="padding:12px;background:var(--bg2);border-left:2px solid var(--blue);margin-bottom:8px;"><div style="font-size:12px;color:var(--white);font-weight:600;margin-bottom:4px;">'+(a.tipo||'')+' — '+(a.titulo||'')+'</div><div style="font-size:12px;color:var(--muted);">'+(a.msg||'').substring(0,80)+'</div><div style="font-size:10px;color:var(--muted);margin-top:4px;font-family:monospace;">'+(a.fecha||'')+'</div></div>';}).join('');}}
   if(el('dash-bienvenida')&&p.name)el('dash-bienvenida').textContent='Bienvenido de vuelta, '+p.name+'. Tu resumen del día.';
@@ -5330,7 +5340,6 @@ async function syncKeyToSupabase(key, val) {
 
   // NOTAS (individual)
   if(key === 'notas' && Array.isArray(val)) {
-    // Save only the latest entry if exists
     var lastNote = val[0];
     if(lastNote && !lastNote._synced) {
       var nuevo = {user_id: uid, titulo: lastNote.titulo||'', contenido: lastNote.contenido||lastNote.texto||'', categoria: lastNote.categoria||'general', fecha: lastNote.fecha||new Date().toLocaleDateString('es-CO')};
@@ -5388,19 +5397,19 @@ async function syncAllFromSupabase() {
       // Notas individuales
       var notas = await supaSelect('notas', 'user_id=eq.'+uid+'&order=created_at.desc');
       if(notas && notas.length) {
-        _origLsSet('notas', notas.map(function(n){n._synced=true;return n;}));
+        lsSetU('notas', notas.map(function(n){n._synced=true;return n;}));
       }
       // Emociones individuales
       var emos = await supaSelect('emociones', 'user_id=eq.'+uid+'&order=created_at.desc');
       if(emos && emos.length) {
-        _origLsSet('emociones', emos.map(function(e){e._synced=true;return e;}));
+        lsSetU('emociones', emos.map(function(e){e._synced=true;return e;}));
       }
       // Objetivos
       var objs = await supaSelect('objetivos', 'user_id=eq.'+uid);
-      if(objs && objs.length) _origLsSet('objetivos', objs);
+      if(objs && objs.length) lsSetU('objetivos', objs);
       // Plan Trading
       var plan = await supaSelect('plan_trading', 'user_id=eq.'+uid);
-      if(plan && plan.length) _origLsSet('plan_trading', plan[0]);
+      if(plan && plan.length) lsSetU('plan', plan[0]);
       // Cuentas
       var cuentas = await supaSelect('cuentas', 'user_id=eq.'+uid);
       if(cuentas && cuentas.length) _origLsSet('user_cuentas', cuentas);
@@ -5775,6 +5784,6 @@ document.addEventListener('click', function(e) {
 
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t39</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t41</div>
 </body>
 </html>
