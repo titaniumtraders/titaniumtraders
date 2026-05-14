@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t41</title>
+<title>Titanium Traders · t42</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -2385,6 +2385,30 @@ async function dbPushLive(l) {
 // ── STATE ──
 let currentUser = null;
 function sameId(a,b){return String(a)===String(b);}
+
+function mapResultado(r) {
+  var f=r.fotos; if(typeof f==='string'){try{f=JSON.parse(f);}catch(e){f=[];}} 
+  return {id:r.id, desc:r.desc||r.descripcion||'', fotos:f||[], autor:r.autor||'', fecha:r.fecha||'', hora:r.hora||''};
+}
+function mapRetiro(r) {
+  var f=r.fotos; if(typeof f==='string'){try{f=JSON.parse(f);}catch(e){f=[];}}
+  return {id:r.id, monto:r.monto||0, comentario:r.comentario||'', fotos:f||[], autor:r.autor||'', fecha:r.fecha||'', hora:r.hora||''};
+}
+function mapComunidad(p) {
+  var f=p.fotos; if(typeof f==='string'){try{f=JSON.parse(f);}catch(e){f=[];}}
+  return {id:p.id, titulo:p.titulo||'', contenido:p.contenido||'', categoria:p.categoria||'General', fotos:f||[], autor:p.autor||'', fecha:p.fecha||'', hora:p.hora||''};
+}
+function mapChat(m) {
+  return {id:m.id, texto:m.texto||'', foto:m.foto||null, autor:m.autor||'', hora:m.hora||''};
+}
+function normNombre(s) { return (s||'').trim().toLowerCase(); }
+function esAutor(item) {
+  return normNombre(item.autor) === normNombre(currentUser&&currentUser.name);
+}
+function puedeModificar(item) {
+  return isCurrentUserAdmin() || esAutor(item);
+}
+
 let currentModule = 'dashboard';
 
 // ── DATETIME ──
@@ -3029,26 +3053,29 @@ function publicarResultado() {
   var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
   msg.textContent='⏳ Publicando...';msg.className='msg-box success';msg.style.display='block';
   supaInsert('resultados',{desc:desc,fotos:JSON.stringify(fotos),autor:autor,fecha:fecha,hora:hora}).then(function(saved){
-    var rid = saved ? saved.id : Date.now();
-    var resultados=lsGet('resultados')||[];
-    resultados.unshift({id:rid,desc:desc,fotos:fotos,autor:autor,fecha:fecha,hora:hora});
-    _origLsSet('resultados',resultados);
+    if(!saved){msg.textContent='❌ Error al publicar.';return;}
+    var lista=lsGet('resultados')||[];
+    lista.unshift(mapResultado(Object.assign({fotos:JSON.stringify(fotos)},saved,{desc:desc,autor:autor,fecha:fecha,hora:hora})));
+    _origLsSet('resultados',lista);
     document.getElementById('res-desc').value='';
     _comFotos.res=[null,null,null];
     [1,2,3].forEach(function(n){var l=document.getElementById('res-foto'+n+'-label');if(l)l.textContent='Foto '+n;});
     var p=document.getElementById('res-fotos-preview');if(p)p.innerHTML='';
     msg.textContent='✅ Resultado publicado.';setTimeout(function(){msg.style.display='none';},3000);
     renderResultados();
-  });
+  }).catch(function(){msg.textContent='❌ Error de conexión.';});
 }
 function editarResultado(id){
   var lista=lsGet('resultados')||[];var r=lista.find(function(x){return sameId(x.id,id);});if(!r)return;
+  if(!puedeModificar(r)){alert('No tienes permiso.');return;}
   var nd=prompt('Descripción:',r.desc);if(nd===null)return;
   r.desc=nd.trim();
   supaUpdateRow('resultados',id,{desc:r.desc}).catch(function(){});
   _origLsSet('resultados',lista);renderResultados();
 }
 function eliminarResultado(id){
+  var lista=lsGet('resultados')||[];var r=lista.find(function(x){return sameId(x.id,id);});
+  if(r&&!puedeModificar(r)){alert('No tienes permiso.');return;}
   if(!confirm('¿Eliminar?'))return;
   supaDelete('resultados',id).catch(function(){});
   _origLsSet('resultados',(lsGet('resultados')||[]).filter(function(x){return !sameId(x.id,id);}));renderResultados();
@@ -3074,9 +3101,9 @@ function publicarRetiro() {
   var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
   msg.textContent='⏳ Publicando...';msg.className='msg-box success';msg.style.display='block';
   supaInsert('publicar_retiros',{monto:monto,comentario:comentario,fotos:JSON.stringify(fotos),autor:autor,fecha:fecha,hora:hora}).then(function(saved){
-    var rid=saved?saved.id:Date.now();
+    if(!saved){msg.textContent='❌ Error al publicar.';return;}
     var retiros=lsGet('pubretiros')||[];
-    retiros.unshift({id:rid,monto:monto,comentario:comentario,fotos:fotos,autor:autor,fecha:fecha,hora:hora});
+    retiros.unshift(mapRetiro(Object.assign({fotos:JSON.stringify(fotos)},saved,{monto:monto,comentario:comentario,autor:autor,fecha:fecha,hora:hora})));
     _origLsSet('pubretiros',retiros);
     document.getElementById('pub-retiro-monto').value='';
     document.getElementById('pub-retiro-comentario').value='';
@@ -3085,10 +3112,11 @@ function publicarRetiro() {
     var p=document.getElementById('ret-fotos-preview');if(p)p.innerHTML='';
     msg.textContent='✅ Retiro publicado.';setTimeout(function(){msg.style.display='none';},3000);
     renderPubRetiros();
-  });
+  }).catch(function(){msg.textContent='❌ Error de conexión.';});
 }
 function editarPubRetiro(id){
   var lista=lsGet('pubretiros')||[];var r=lista.find(function(x){return sameId(x.id,id);});if(!r)return;
+  if(!puedeModificar(r)){alert('No tienes permiso.');return;}
   var nm=prompt('Monto:',r.monto);if(nm===null)return;
   var nc=prompt('Comentario:',r.comentario||'');if(nc===null)return;
   r.monto=nm.trim();r.comentario=nc.trim();
@@ -3096,6 +3124,8 @@ function editarPubRetiro(id){
   _origLsSet('pubretiros',lista);renderPubRetiros();
 }
 function eliminarPubRetiro(id){
+  var lista=lsGet('pubretiros')||[];var r=lista.find(function(x){return sameId(x.id,id);});
+  if(r&&!puedeModificar(r)){alert('No tienes permiso.');return;}
   if(!confirm('¿Eliminar?'))return;
   supaDelete('publicar_retiros',id).catch(function(){});
   _origLsSet('pubretiros',(lsGet('pubretiros')||[]).filter(function(x){return !sameId(x.id,id);}));renderPubRetiros();
@@ -3401,9 +3431,9 @@ function publicarComunidad() {
   var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
   if(msg){msg.textContent='⏳ Publicando...';msg.className='msg-box success';msg.style.display='block';}
   supaInsert('comunidad',{titulo:titulo,contenido:contenido,categoria:categoria,fotos:JSON.stringify(fotos),autor:autor,fecha:fecha,hora:hora}).then(function(saved){
-    var pid=saved?saved.id:Date.now();
+    if(!saved){if(msg)msg.textContent='❌ Error al publicar.';return;}
     var posts=lsGet('comunidad')||[];
-    posts.unshift({id:pid,titulo:titulo,contenido:contenido,categoria:categoria,fotos:fotos,autor:autor,fecha:fecha,hora:hora});
+    posts.unshift(mapComunidad(Object.assign({fotos:JSON.stringify(fotos)},saved,{titulo:titulo,contenido:contenido,categoria:categoria,autor:autor,fecha:fecha,hora:hora})));
     _origLsSet('comunidad',posts);
     if(document.getElementById('com-titulo'))document.getElementById('com-titulo').value='';
     if(document.getElementById('com-contenido'))document.getElementById('com-contenido').value='';
@@ -3412,10 +3442,11 @@ function publicarComunidad() {
     var p=document.getElementById('com-fotos-preview');if(p)p.innerHTML='';
     if(msg){msg.textContent='✅ Publicado.';setTimeout(function(){msg.style.display='none';},3000);}
     renderComunidad();
-  });
+  }).catch(function(){if(msg)msg.textContent='❌ Error de conexión.';});
 }
 function editarPostComunidad(id){
   var lista=lsGet('comunidad')||[];var p=lista.find(function(x){return sameId(x.id,id);});if(!p)return;
+  if(!puedeModificar(p)){alert('No tienes permiso.');return;}
   var nt=prompt('Título:',p.titulo);if(nt===null)return;
   var nc=prompt('Contenido:',p.contenido||'');if(nc===null)return;
   p.titulo=nt.trim();p.contenido=nc.trim();
@@ -3423,6 +3454,8 @@ function editarPostComunidad(id){
   _origLsSet('comunidad',lista);renderComunidad();
 }
 function eliminarPostComunidad(id){
+  var lista=lsGet('comunidad')||[];var p=lista.find(function(x){return sameId(x.id,id);});
+  if(p&&!puedeModificar(p)){alert('No tienes permiso.');return;}
   if(!confirm('¿Eliminar?'))return;
   supaDelete('comunidad',id).catch(function(){});
   _origLsSet('comunidad',(lsGet('comunidad')||[]).filter(function(x){return !sameId(x.id,id);}));renderComunidad();
@@ -3478,9 +3511,11 @@ function enviarFotoChat(input) {
   r.readAsDataURL(input.files[0]);
 }
 function eliminarMsgChat(id) {
+  var lista=lsGet('chat_vivo')||[];var m=lista.find(function(x){return sameId(x.id,id);});
+  if(m&&!puedeModificar(m)){alert('No tienes permiso.');return;}
   if(!confirm('¿Eliminar mensaje?'))return;
   supaDelete('chat_vivo',id).catch(function(){});
-  _origLsSet('chat_vivo',(lsGet('chat_vivo')||[]).filter(function(m){return !sameId(m.id,id)}));
+  _origLsSet('chat_vivo',lista.filter(function(x){return !sameId(x.id,id)}));
   renderChatVivo();
 }
 function renderChatVivo() {
@@ -5642,21 +5677,33 @@ var realtimePollIntervals = {};
 
 function startRealtimePoll(table, lsKey, currentModuleId, renderFn) {
   if(realtimePollIntervals[table]) clearInterval(realtimePollIntervals[table]);
+  var mapFn = {
+    'resultados': mapResultado,
+    'publicar_retiros': mapRetiro,
+    'comunidad': mapComunidad,
+    'chat_vivo': mapChat
+  }[table] || function(x){return x;};
+  var order = table==='chat_vivo' ? 'order=created_at.asc&limit=100' : 'order=created_at.desc&limit=100';
   realtimePollIntervals[table] = setInterval(function(){
     if(currentModule !== currentModuleId) return;
-    supaSelect(table, 'order=created_at.desc&limit=100').then(function(rows){
+    supaSelect(table, order).then(function(rows){
       if(!rows) return;
+      var mapped = rows.map(mapFn);
       var oldData = lsGet(lsKey) || [];
-      var remoteIds = rows.map(function(x){return String(x.id);});
-      var localOnly = oldData.filter(function(x){ return !remoteIds.includes(String(x.id)); });
-      if(localOnly.length > 0) return; // hay datos locales no sincronizados, esperar
-      var changed = JSON.stringify(remoteIds) !== JSON.stringify(oldData.map(function(x){return String(x.id);}));
-      if(changed){
-        _origLsSet(lsKey, rows);
+      var remoteIds = mapped.map(function(x){return String(x.id);});
+      var localIds  = oldData.map(function(x){return String(x.id);});
+      // Si hay IDs locales no en remoto (recién publicados), esperar max 10s
+      var now = Date.now();
+      var localOnly = oldData.filter(function(x){
+        return !remoteIds.includes(String(x.id)) && (!x._ts || (now-x._ts)<10000);
+      });
+      if(localOnly.length > 0) return;
+      if(JSON.stringify(remoteIds) !== JSON.stringify(localIds)){
+        _origLsSet(lsKey, mapped);
         if(typeof renderFn === 'function') renderFn();
       }
     });
-  }, 5000);
+  }, 4000);
 }
 
 function stopAllRealtimePolls() {
@@ -5784,6 +5831,6 @@ document.addEventListener('click', function(e) {
 
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t41</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t42</div>
 </body>
 </html>
