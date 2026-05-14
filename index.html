@@ -3001,14 +3001,8 @@ function _comCard(item, accentColor, badgeText, badgeColor) {
   }
   foot+='</div>';
   body.innerHTML=head+cont+foot;
-  // bind edit/del buttons
-  body.querySelectorAll('[data-edit]').forEach(function(btn){
-    btn.onclick=function(){window[this.getAttribute('data-fn')](this.getAttribute('data-edit'));};
-  });
-  body.querySelectorAll('[data-del]').forEach(function(btn){
-    btn.onclick=function(){window[this.getAttribute('data-fn')](this.getAttribute('data-del'));};
-  });
   div.appendChild(body);
+  // Event delegation en el div — sobrevive a outerHTML via re-delegación global
   return div.outerHTML;
 }
 
@@ -5756,12 +5750,26 @@ function fixPhotoUploadButtons() {
 document.addEventListener('click', function(e) {
   var btn = e.target.closest('button');
   if(!btn) return;
+  // _comCard: resultados, retiros, comunidad
+  var fn;
+  if(btn.dataset.edit !== undefined && btn.dataset.fn) {
+    fn = window[btn.dataset.fn];
+    if(typeof fn === 'function') { fn(btn.dataset.edit); return; }
+  }
+  if(btn.dataset.del !== undefined && btn.dataset.fn) {
+    fn = window[btn.dataset.fn];
+    if(typeof fn === 'function') { fn(btn.dataset.del); return; }
+  }
+  // Finanzas
   if(btn.dataset.aprobar    !== undefined) { finAprobar(btn.dataset.aprobar); return; }
   if(btn.dataset.rechazar   !== undefined) { finRechazar(btn.dataset.rechazar); return; }
+  // Anuncios
   if(btn.dataset.editAnuncio!== undefined) { editarAnuncio(btn.dataset.editAnuncio); return; }
   if(btn.dataset.delAnuncio !== undefined) { eliminarAnuncio(btn.dataset.delAnuncio); return; }
+  // Academia
   if(btn.dataset.editAc     !== undefined) { acEditar(btn.dataset.editAc); return; }
   if(btn.dataset.delAc      !== undefined) { acEliminar(btn.dataset.delAc); return; }
+  // Chat
   if(btn.dataset.delChat    !== undefined) { eliminarMsgChat(btn.dataset.delChat); return; }
 });
 
