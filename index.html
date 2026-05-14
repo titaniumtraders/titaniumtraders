@@ -2384,9 +2384,7 @@ async function dbPushLive(l) {
 
 // ── STATE ──
 let currentUser = null;
-
-function sameId(a,b){ return String(a)===String(b); }
-
+function sameId(a,b){return String(a)===String(b);}
 let currentModule = 'dashboard';
 
 // ── DATETIME ──
@@ -3026,7 +3024,6 @@ function publicarResultado() {
   resultados.unshift({id:Date.now(),desc:desc,fotos:fotos,autor:currentUser&&currentUser.name?currentUser.name:'TRADER',
     fecha:new Date().toLocaleDateString('es-CO'),hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()});
   lsSet('resultados',resultados);
-  if(typeof supaInsert==='function')supaInsert('resultados',{desc:desc,autor:resultados[0].autor,fecha:resultados[0].fecha,hora:resultados[0].hora}).catch(function(){});
   document.getElementById('res-desc').value='';
   _comFotos.res=[null,null,null];
   [1,2,3].forEach(function(n){var l=document.getElementById('res-foto'+n+'-label');if(l)l.textContent='Foto '+n;});
@@ -3064,7 +3061,6 @@ function publicarRetiro() {
   retiros.unshift({id:Date.now(),monto:monto,comentario:comentario,fotos:fotos,autor:currentUser&&currentUser.name?currentUser.name:'TRADER',
     fecha:new Date().toLocaleDateString('es-CO'),hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()});
   lsSet('pubretiros',retiros);
-  if(typeof supaInsert==='function')supaInsert('publicar_retiros',{monto:monto,comentario:comentario,autor:retiros[0].autor,fecha:retiros[0].fecha,hora:retiros[0].hora}).catch(function(){});
   document.getElementById('pub-retiro-monto').value='';
   document.getElementById('pub-retiro-comentario').value='';
   _comFotos.ret=[null,null,null];
@@ -3082,7 +3078,7 @@ function editarPubRetiro(id){
 }
 function eliminarPubRetiro(id){
   if(!confirm('¿Eliminar?'))return;
-  lsSet('pubretiros',(lsGet('pubretiros')||[]).filter(function(x){return x.id!==id;}));renderPubRetiros();
+  lsSet('pubretiros',(lsGet('pubretiros')||[]).filter(function(x){return !sameId(x.id,id);}));renderPubRetiros();
 }
 function renderPubRetiros() {
   var feed=document.getElementById('pubretiros-feed');if(!feed)return;
@@ -3453,7 +3449,7 @@ function renderChatVivo() {
     var contenido=m.foto
       ?'<img data-lb="1" src="'+m.foto+'" style="max-width:220px;max-height:180px;object-fit:cover;border-radius:2px;cursor:zoom-in;margin-top:4px;">'
       :'<div style="font-size:13px;color:var(--white);">'+m.texto+'</div>';
-    var delBtn=puedeDel?'<button onclick="eliminarMsgChat('+m.id+')" style="background:none;border:none;color:rgba(255,100,100,0.6);cursor:pointer;font-size:11px;padding:0 0 0 6px;" title="Eliminar">🗑</button>':'';
+    var delBtn=puedeDel?'<button data-del-chat="'+m.id+'" style="background:none;border:none;color:rgba(255,100,100,0.6);cursor:pointer;font-size:11px;padding:0 0 0 6px;" title="Eliminar">🗑</button>':'';
     return '<div style="display:flex;flex-direction:column;align-items:'+align+';margin-bottom:10px;">'
       +'<div style="max-width:75%;background:'+bg+';border:1px solid '+border+';padding:10px 14px;border-radius:2px;">'
         +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">'
@@ -4061,13 +4057,11 @@ function acEditar(id){
   var nt=prompt('Título:',a.titulo);if(nt===null)return;
   var nd=prompt('Descripción:',a.desc||'');if(nd===null)return;
   var nu=prompt('URL:',a.url||'');if(nu===null)return;
-  a.titulo=nt.trim();a.desc=nd.trim();a.url=nu.trim();
-  lsSet('academia',lista);acRenderAdmin();acRenderUser();
+  a.titulo=nt.trim();a.desc=nd.trim();a.url=nu.trim();lsSet('academia',lista);acRenderAdmin();acRenderUser();
 }
 function acEliminar(id){
   if(!confirm('¿Eliminar?'))return;
-  lsSet('academia',(lsGet('academia')||[]).filter(function(a){return !sameId(a.id,id);}));
-  acRenderAdmin();acRenderUser();
+  lsSet('academia',(lsGet('academia')||[]).filter(function(a){return !sameId(a.id,id);}));acRenderAdmin();acRenderUser();
 }
 var AC_IC={video:'🎥',libro:'📖',foto:'🖼️',analisis:'📊'};
 var AC_CL={video:'var(--blue)',libro:'var(--gold)',foto:'var(--silver)',analisis:'#00c864'};
@@ -4076,8 +4070,8 @@ function acRenderAdmin(){
   var items=lsGet('academia')||[];
   if(!items.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);">Sin contenido</div>';return;}
   cont.innerHTML=items.map(function(a){return '<div style="background:var(--bg2);padding:14px;border-left:3px solid '+(AC_CL[a.tipo]||'var(--blue)')+';margin-bottom:8px;"><div style="font-size:10px;color:'+(AC_CL[a.tipo]||'var(--blue)')+';font-family:Orbitron,sans-serif;letter-spacing:1px;margin-bottom:4px;">'+(AC_IC[a.tipo]||'📄')+' '+a.tipo.toUpperCase()+'</div><div style="font-family:Orbitron,sans-serif;font-size:12px;font-weight:700;margin-bottom:4px;">'+a.titulo+'</div><div style="font-size:11px;color:var(--muted);margin-bottom:8px;">'+a.nivel+' · '+a.fecha+'</div>'+(a.url?'<div style="font-size:11px;color:var(--blue);margin-bottom:8px;word-break:break-all;">'+a.url.substring(0,50)+'</div>':'')+'<div style="display:flex;gap:6px;margin-top:6px;">'
-      +'<button class="btn-action sm" onclick="acEditar(\'' +a.id+ '\')" title="Editar">✏️</button>'
-      +'<button class="btn-action sm red" onclick="acEliminar(\'' +a.id+ '\')" title="Eliminar">🗑️</button>'
+      +'<button class="btn-action sm" data-edit-ac="'+a.id+'" title="Editar">✏️</button>'
+      +'<button class="btn-action sm red" data-del-ac="'+a.id+'" title="Eliminar">🗑️</button>'
       +'</div></div>';}).join('');
 }
 var acFiltroActual='todos';
@@ -4221,8 +4215,8 @@ function renderAnuncios(){
       +'<div style="font-size:12px;color:var(--light);margin-bottom:6px;">'+a.msg+'</div>'
       +'<div style="font-size:10px;color:var(--muted);">'+a.fecha+'</div>'
       +'<div style="position:absolute;top:10px;right:10px;display:flex;gap:6px;">'
-        +'<button class="btn-action sm" onclick="editarAnuncio(\'' +a.id+ '\')" title="Editar">✏️</button>'
-        +'<button class="btn-action sm red" onclick="eliminarAnuncio(\'' +a.id+ '\')" title="Eliminar">🗑️</button>'
+        +'<button class="btn-action sm" data-edit-anuncio="'+a.id+'" title="Editar">✏️</button>'
+        +'<button class="btn-action sm red" data-del-anuncio="'+a.id+'" title="Eliminar">🗑️</button>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -5584,16 +5578,10 @@ function startRealtimePoll(table, lsKey, currentModuleId, renderFn) {
       if(!rows) return;
       var oldData = lsGet(lsKey) || [];
       var remoteIds = rows.map(function(x){return String(x.id);});
-      // Detectar items locales que NO están en Supabase aún (recién publicados)
       var localOnly = oldData.filter(function(x){ return !remoteIds.includes(String(x.id)); });
-      if(localOnly.length > 0) {
-        // Hay datos locales no sincronizados — no sobreescribir, esperar siguiente ciclo
-        return;
-      }
-      var localIds = oldData.map(function(x){return String(x.id);});
-      var remoteIdsStr = remoteIds.join(',');
-      var localIdsStr = localIds.join(',');
-      if(remoteIdsStr !== localIdsStr) {
+      if(localOnly.length > 0) return; // hay datos locales no sincronizados, esperar
+      var changed = JSON.stringify(remoteIds) !== JSON.stringify(oldData.map(function(x){return String(x.id);}));
+      if(changed){
         _origLsSet(lsKey, rows);
         if(typeof renderFn === 'function') renderFn();
       }
