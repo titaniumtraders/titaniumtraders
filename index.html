@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t36</title>
+<title>Titanium Traders · t37</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -4103,7 +4103,7 @@ function finRender(){
   set('fin-ingresos','$'+ing.toFixed(2));set('fin-aprobados',ap.length);set('fin-pendientes',pen.length);set('fin-rechazados',rej.length);
   var cp=document.getElementById('fin-pend-lista');
   if(cp){if(!pen.length){cp.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);">Sin comprobantes</div>';}
-  else{cp.innerHTML=pen.map(function(p){return '<div style="padding:14px;background:var(--bg2);border-left:3px solid var(--gold);margin-bottom:10px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div style="font-family:Orbitron,sans-serif;font-size:13px;font-weight:700;">'+p.usuario+' — $'+parseFloat(p.monto).toFixed(2)+'</div><div style="font-size:11px;color:var(--muted);">'+p.metodo+' · '+p.fecha+(p.ref?' · '+p.ref:'')+'</div></div><span class="badge badge-gold">PENDIENTE</span></div>'+(p.comprobante?'<img src="'+p.comprobante+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:2px;margin-bottom:8px;">':'')+'<div style="display:flex;gap:8px;"><button class="btn-action sm green" onclick="finAprobar('+p.id+')">✅ Aprobar</button><button class="btn-action sm red" onclick="finRechazar('+p.id+')">❌ Rechazar</button></div></div>';}).join('');}}
+  else{cp.innerHTML=pen.map(function(p){return '<div style="padding:14px;background:var(--bg2);border-left:3px solid var(--gold);margin-bottom:10px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div style="font-family:Orbitron,sans-serif;font-size:13px;font-weight:700;">'+p.usuario+' — $'+parseFloat(p.monto).toFixed(2)+'</div><div style="font-size:11px;color:var(--muted);">'+p.metodo+' · '+p.fecha+(p.ref?' · '+p.ref:'')+'</div></div><span class="badge badge-gold">PENDIENTE</span></div>'+(p.comprobante?'<img src="'+p.comprobante+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:2px;margin-bottom:8px;">':'')+'<div style="display:flex;gap:8px;"><button class="btn-action sm green" data-aprobar="'+p.id+'">✅ Aprobar</button><button class="btn-action sm red" data-rechazar="'+p.id+'">❌ Rechazar</button></div></div>';}).join('');}}
   var ch=document.getElementById('fin-hist-lista');
   if(ch){var hist=comps.filter(function(c){return c.estado!=='Pendiente';});
   if(!hist.length){ch.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);">Sin historial</div>';}
@@ -5685,8 +5685,21 @@ function fixPhotoUploadButtons() {
   }
 })();
 
+// ══ EVENT DELEGATION GLOBAL ══
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('button');
+  if(!btn) return;
+  if(btn.dataset.aprobar    !== undefined) { finAprobar(btn.dataset.aprobar); return; }
+  if(btn.dataset.rechazar   !== undefined) { finRechazar(btn.dataset.rechazar); return; }
+  if(btn.dataset.editAnuncio!== undefined) { editarAnuncio(btn.dataset.editAnuncio); return; }
+  if(btn.dataset.delAnuncio !== undefined) { eliminarAnuncio(btn.dataset.delAnuncio); return; }
+  if(btn.dataset.editAc     !== undefined) { acEditar(btn.dataset.editAc); return; }
+  if(btn.dataset.delAc      !== undefined) { acEliminar(btn.dataset.delAc); return; }
+  if(btn.dataset.delChat    !== undefined) { eliminarMsgChat(btn.dataset.delChat); return; }
+});
+
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t36</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t37</div>
 </body>
 </html>
