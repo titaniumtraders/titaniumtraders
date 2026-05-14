@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t34</title>
+<title>Titanium Traders · t35</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -685,14 +685,14 @@ textarea.pform-input{resize:vertical;min-height:90px;}
         </ul>
         <button class="btn-plan" onclick="openModal('registerModal')">SUSCRIBIRME</button>
       </div>
-      <div class="plan-card feat" style="--pc:#C0C8D8">
+      <div class="plan-card feat" id="wplan-prop" style="--pc:#C0C8D8">
         <span class="plan-pop">POPULAR</span>
         <span class="plan-ic">🥈</span>
-        <div class="plan-nm">Prop</div>
-        <div class="plan-tg">Para traders en desarrollo</div>
-        <div class="plan-pr-amt" style="color:var(--gold)">$29.99</div>
+        <div class="plan-nm" id="wplan-prop-nm">Prop</div>
+        <div class="plan-tg" id="wplan-prop-tag">Para traders en desarrollo</div>
+        <div class="plan-pr-amt" id="wplan-prop-precio" style="color:var(--gold)">$29.99</div>
         <div class="plan-pr-per">/ mes USD</div>
-        <ul class="plan-feats">
+        <ul class="plan-feats" id="wplan-prop-feats">
           <li>Todo lo del plan Básico</li>
           <li>Señales de índices sintéticos</li>
           <li>Análisis técnico avanzado</li>
@@ -701,13 +701,13 @@ textarea.pform-input{resize:vertical;min-height:90px;}
         </ul>
         <button class="btn-plan" onclick="openModal('registerModal')">SUSCRIBIRME</button>
       </div>
-      <div class="plan-card" style="--pc:#FFD700">
+      <div class="plan-card" id="wplan-vip" style="--pc:#FFD700">
         <span class="plan-ic">👑</span>
-        <div class="plan-nm">VIP</div>
-        <div class="plan-tg">Acceso élite total</div>
-        <div class="plan-pr-amt" style="color:var(--gold)">$59.99</div>
+        <div class="plan-nm" id="wplan-vip-nm">VIP</div>
+        <div class="plan-tg" id="wplan-vip-tag">Acceso élite total</div>
+        <div class="plan-pr-amt" id="wplan-vip-precio" style="color:var(--gold)">$59.99</div>
         <div class="plan-pr-per">/ mes USD</div>
-        <ul class="plan-feats">
+        <ul class="plan-feats" id="wplan-vip-feats">
           <li>Todo lo del plan Prop</li>
           <li>Sesiones en vivo con Emmanuel</li>
           <li>Atención personalizada</li>
@@ -810,7 +810,7 @@ textarea.pform-input{resize:vertical;min-height:90px;}
         <div id="nav-msg-badge" style="display:none;position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#ff6b6b;color:#fff;font-size:10px;font-family:Orbitron,sans-serif;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;"></div>
       </div>
       <!-- Notificaciones campana -->
-      <div class="pnav-notif" onclick="showModule('notificaciones','🔔 Notificaciones','Tus alertas');" title="Notificaciones" style="position:relative;">
+      <div class="pnav-notif" style="display:none;position:relative;">
         🔔
         <div id="nav-notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:var(--blue);color:#000;font-size:10px;font-family:Orbitron,sans-serif;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;"></div>
       </div>
@@ -846,7 +846,7 @@ textarea.pform-input{resize:vertical;min-height:90px;}
       <div class="sitem" onclick="showModule('live','🔴 Live','Sesiones en vivo')"><span class="sitem-ic">🔴</span><span class="sitem-label">Live</span></div>
       <div class="sitem" onclick="showModule('academia','📚 Academia','Contenido educativo')"><span class="sitem-ic">📚</span><span class="sitem-label">Academia</span></div>
       <div class="sitem" onclick="showModule('aanuncios_user','📢 Anuncios','Comunicados de Titanium Traders')"><span class="sitem-ic">📢</span><span class="sitem-label">Anuncios</span></div>
-      <div class="sitem" onclick="showModule('notificaciones','🔔 Notificaciones','Tus alertas')"><span class="sitem-ic">🔔</span><span class="sitem-label">Notificaciones</span><span class="sitem-badge">3</span></div>
+
       <div class="sitem" onclick="showModule('redes','🌐 Redes Sociales','Síguenos en redes')"><span class="sitem-ic">🌐</span><span class="sitem-label">Redes Sociales</span></div>
       <div class="sitem" onclick="showModule('micuenta','👤 Mi Cuenta','Tu perfil y configuración')"><span class="sitem-ic">👤</span><span class="sitem-label">Mi Cuenta</span></div>
     </div>
@@ -1363,10 +1363,17 @@ textarea.pform-input{resize:vertical;min-height:90px;}
         <h3>➕ Nueva Nota</h3>
         <div class="pform-group"><label class="pform-label">Título</label><input type="text" id="nota-titulo" class="pform-input" placeholder="Título de la nota"></div>
         <div class="pform-group"><label class="pform-label">Contenido</label><textarea id="nota-contenido" class="pform-input" style="min-height:100px" placeholder="Escribe tu nota..."></textarea></div>
+        <div class="pform-group"><label class="pform-label">📸 Imagen (opcional)</label>
+          <label for="nota-foto-input" style="border:1px dashed var(--border);padding:14px;text-align:center;cursor:pointer;background:var(--bg2);display:block;border-radius:2px;">
+            <div style="font-size:20px;">📸</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="nota-foto-label">Toca para agregar imagen</div>
+          </label>
+          <input type="file" id="nota-foto-input" accept="image/*" style="display:none" onchange="notaPreviewFoto(this)">
+        </div>
         <div id="nota-msg" class="msg-box" style="display:none;"></div>
         <button class="btn-action" onclick="guardarNota()">💾 GUARDAR NOTA</button>
       </div>
-      <div id="notas-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;"></div>
+      <div id="notas-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;"></div>
     </div>
 
     <!-- ══ EMOCIONES ══ -->
@@ -1533,9 +1540,13 @@ textarea.pform-input{resize:vertical;min-height:90px;}
           <div style="display:flex;align-items:center;gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:#00c864;"></div><span style="font-size:11px;color:#00c864;font-family:'Share Tech Mono',monospace;">EN LÍNEA</span></div>
         </div>
         <div class="chat-container" id="chat-vivo-messages" style="height:420px;"></div>
-        <div class="chat-input-row" style="margin-top:12px;">
-          <input type="text" class="pform-input" id="chat-vivo-input" placeholder="Escribe un mensaje..." onkeypress="if(event.key==='Enter')enviarChatVivo()" style="flex:1;">
-          <button class="btn-action" onclick="enviarChatVivo()" style="padding:11px 20px;">➤ Enviar</button>
+        <div style="margin-top:12px;">
+          <div class="chat-input-row" style="margin-bottom:8px;">
+            <input type="text" class="pform-input" id="chat-vivo-input" placeholder="Escribe un mensaje..." onkeypress="if(event.key==='Enter')enviarChatVivo()" style="flex:1;">
+            <label for="chat-foto-input" class="btn-action" style="padding:11px 14px;cursor:pointer;" title="Enviar foto">📸</label>
+            <input type="file" id="chat-foto-input" accept="image/*" style="display:none" onchange="enviarFotoChat(this)">
+            <button class="btn-action" onclick="enviarChatVivo()" style="padding:11px 20px;">➤ Enviar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -2780,39 +2791,54 @@ showModule=function(id,title,sub){
 // ══════════════════════════════════════
 //  NOTAS
 // ══════════════════════════════════════
+var _notaFotoData = null;
+function notaPreviewFoto(input) {
+  if(!input.files||!input.files[0])return;
+  var r=new FileReader();
+  r.onload=function(e){
+    _notaFotoData=e.target.result;
+    var lbl=document.getElementById('nota-foto-label');
+    if(lbl)lbl.textContent='✅ '+input.files[0].name.substring(0,20);
+  };
+  r.readAsDataURL(input.files[0]);
+}
 function guardarNota() {
-  const titulo    = document.getElementById('nota-titulo').value.trim();
-  const contenido = document.getElementById('nota-contenido').value.trim();
-  const msg       = document.getElementById('nota-msg');
-  if (!titulo || !contenido) {
-    msg.textContent='⚠️ Completa el título y el contenido.'; msg.className='msg-box error'; msg.style.display='block';
-    setTimeout(()=>{ msg.style.display='none'; },3000); return;
-  }
-  const notas = lsGet('notas') || [];
-  notas.unshift({ id: Date.now(), titulo, contenido,
-    fecha: new Date().toLocaleDateString('es-CO'),
-    hora:  new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase() });
-  lsSet('notas', notas);
+  var titulo=document.getElementById('nota-titulo').value.trim();
+  var contenido=document.getElementById('nota-contenido').value.trim();
+  var msg=document.getElementById('nota-msg');
+  if(!titulo||!contenido){msg.textContent='⚠️ Completa el título y el contenido.';msg.className='msg-box error';msg.style.display='block';setTimeout(function(){msg.style.display='none';},3000);return;}
+  var notas=lsGet('notas')||[];
+  notas.unshift({id:Date.now(),titulo:titulo,contenido:contenido,foto:_notaFotoData||null,
+    fecha:new Date().toLocaleDateString('es-CO'),
+    hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()});
+  lsSet('notas',notas);
   document.getElementById('nota-titulo').value='';
   document.getElementById('nota-contenido').value='';
-  msg.textContent='✅ Nota guardada.'; msg.className='msg-box success'; msg.style.display='block';
-  setTimeout(()=>{ msg.style.display='none'; },3000);
+  _notaFotoData=null;
+  var lbl=document.getElementById('nota-foto-label');if(lbl)lbl.textContent='Toca para agregar imagen';
+  var inp=document.getElementById('nota-foto-input');if(inp)inp.value='';
+  msg.textContent='✅ Nota guardada.';msg.className='msg-box success';msg.style.display='block';
+  setTimeout(function(){msg.style.display='none';},3000);
   renderNotas();
 }
 function eliminarNota(id) {
-  lsSet('notas', (lsGet('notas')||[]).filter(n=>n.id!==id)); renderNotas();
+  lsSet('notas',(lsGet('notas')||[]).filter(function(n){return n.id!==id;}));renderNotas();
 }
 function renderNotas() {
-  const grid=document.getElementById('notas-grid'); if(!grid)return;
-  const notas=lsGet('notas')||[];
-  if(!notas.length){ grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px 0;">No tienes notas aún.</div>'; return; }
-  grid.innerHTML=notas.map(n=>`
-    <div style="background:var(--bg3);border:1px solid var(--border);padding:20px;border-top:3px solid var(--blue);position:relative;">
-      <div style="font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;margin-bottom:6px;padding-right:30px;">${n.titulo}</div>
-      <div style="font-size:13px;color:var(--light);line-height:1.7;white-space:pre-wrap;margin-bottom:10px;">${n.contenido}</div>
-      <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;">${n.fecha} · ${n.hora}</div>
-      <button class="btn-action sm red" style="position:absolute;top:12px;right:12px;" onclick="eliminarNota(${n.id})">🗑️</button>
-    </div>`).join('');
+  var grid=document.getElementById('notas-grid');if(!grid)return;
+  var notas=lsGet('notas')||[];
+  if(!notas.length){grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px 0;">No tienes notas aún.</div>';return;}
+  grid.innerHTML=notas.map(function(n){
+    return '<div style="background:var(--bg3);border:1px solid var(--border);border-top:3px solid var(--blue);overflow:hidden;position:relative;">'
+      +(n.foto?'<img data-lb="1" src="'+n.foto+'" style="width:100%;max-height:160px;object-fit:cover;cursor:zoom-in;">':'')
+      +'<div style="padding:16px;">'
+        +'<div style="font-family:Orbitron,sans-serif;font-size:12px;font-weight:700;margin-bottom:6px;padding-right:30px;">'+n.titulo+'</div>'
+        +'<div style="font-size:13px;color:var(--light);line-height:1.7;white-space:pre-wrap;margin-bottom:10px;">'+n.contenido+'</div>'
+        +'<div style="font-size:10px;color:var(--muted);">'+n.fecha+' · '+n.hora+'</div>'
+      +'</div>'
+      +'<button class="btn-action sm red" style="position:absolute;top:12px;right:12px;" onclick="eliminarNota('+n.id+')">🗑️</button>'
+    +'</div>';
+  }).join('');
 }
 
 // ══════════════════════════════════════
@@ -3379,28 +3405,60 @@ function renderComunidad() {
 //  CHAT EN VIVO
 // ══════════════════════════════════════
 function enviarChatVivo() {
-  const input=document.getElementById('chat-vivo-input'); if(!input)return;
-  const texto=input.value.trim(); if(!texto)return;
-  const msgs=lsGet('chat_vivo')||[];
-  msgs.push({ id:Date.now(), texto, autor:currentUser?.name||'TRADER',
-    hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase() });
-  if(msgs.length>200) msgs.splice(0, msgs.length-200);
-  lsSet('chat_vivo', msgs);
+  var input=document.getElementById('chat-vivo-input');if(!input)return;
+  var texto=input.value.trim();if(!texto)return;
+  var msgs=lsGet('chat_vivo')||[];
+  msgs.push({id:Date.now(),texto:texto,foto:null,autor:currentUser&&currentUser.name?currentUser.name:'TRADER',
+    hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()});
+  if(msgs.length>200)msgs.splice(0,msgs.length-200);
+  lsSet('chat_vivo',msgs);
   input.value='';
   renderChatVivo();
 }
+function enviarFotoChat(input) {
+  if(!input.files||!input.files[0])return;
+  var r=new FileReader();
+  r.onload=function(e){
+    var msgs=lsGet('chat_vivo')||[];
+    msgs.push({id:Date.now(),texto:'',foto:e.target.result,autor:currentUser&&currentUser.name?currentUser.name:'TRADER',
+      hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()});
+    if(msgs.length>200)msgs.splice(0,msgs.length-200);
+    lsSet('chat_vivo',msgs);
+    input.value='';
+    renderChatVivo();
+  };
+  r.readAsDataURL(input.files[0]);
+}
+function eliminarMsgChat(id) {
+  if(!confirm('¿Eliminar mensaje?'))return;
+  lsSet('chat_vivo',(lsGet('chat_vivo')||[]).filter(function(m){return m.id!==id;}));
+  renderChatVivo();
+}
 function renderChatVivo() {
-  const box=document.getElementById('chat-vivo-messages'); if(!box)return;
-  const msgs=lsGet('chat_vivo')||[];
-  if(!msgs.length){ box.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px;text-align:center;">No hay mensajes aún.</div>'; return; }
-  const esYo=m=>m.autor===currentUser?.name;
-  box.innerHTML=msgs.map(m=>`
-    <div style="display:flex;flex-direction:column;align-items:${esYo(m)?'flex-end':'flex-start'};margin-bottom:10px;">
-      <div style="max-width:75%;background:${esYo(m)?'rgba(0,128,255,0.18)':'var(--bg2)'};border:1px solid ${esYo(m)?'var(--blue2)':'var(--border)'};padding:10px 14px;border-radius:2px;">
-        <div style="font-size:9px;color:var(--blue);font-family:'Orbitron',sans-serif;margin-bottom:4px;">${m.autor} · ${m.hora}</div>
-        <div style="font-size:13px;color:var(--white);">${m.texto}</div>
-      </div>
-    </div>`).join('');
+  var box=document.getElementById('chat-vivo-messages');if(!box)return;
+  var msgs=lsGet('chat_vivo')||[];
+  if(!msgs.length){box.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px;text-align:center;">No hay mensajes aún.</div>';return;}
+  var esAdmin=typeof isCurrentUserAdmin==='function'?isCurrentUserAdmin():false;
+  box.innerHTML=msgs.map(function(m){
+    var esYo=m.autor===(currentUser&&currentUser.name);
+    var puedeDel=esYo||esAdmin;
+    var align=esYo?'flex-end':'flex-start';
+    var bg=esYo?'rgba(0,128,255,0.18)':'var(--bg2)';
+    var border=esYo?'var(--blue2)':'var(--border)';
+    var contenido=m.foto
+      ?'<img data-lb="1" src="'+m.foto+'" style="max-width:220px;max-height:180px;object-fit:cover;border-radius:2px;cursor:zoom-in;margin-top:4px;">'
+      :'<div style="font-size:13px;color:var(--white);">'+m.texto+'</div>';
+    var delBtn=puedeDel?'<button onclick="eliminarMsgChat('+m.id+')" style="background:none;border:none;color:rgba(255,100,100,0.6);cursor:pointer;font-size:11px;padding:0 0 0 6px;" title="Eliminar">🗑</button>':'';
+    return '<div style="display:flex;flex-direction:column;align-items:'+align+';margin-bottom:10px;">'
+      +'<div style="max-width:75%;background:'+bg+';border:1px solid '+border+';padding:10px 14px;border-radius:2px;">'
+        +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">'
+          +'<span style="font-size:9px;color:var(--blue);font-family:Orbitron,sans-serif;">'+m.autor+' · '+m.hora+'</span>'
+          +delBtn
+        +'</div>'
+        +contenido
+      +'</div>'
+    +'</div>';
+  }).join('');
   box.scrollTop=box.scrollHeight;
 }
 
@@ -4037,8 +4095,18 @@ function finRender(){
   if(!hist.length){ch.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);">Sin historial</div>';}
   else{ch.innerHTML=hist.map(function(p){var c=p.estado==='Aprobado'?'#00c864':'#ff6b6b';var b=p.estado==='Aprobado'?'badge-green':'badge-red';return '<div style="padding:12px;background:var(--bg2);border-left:3px solid '+c+';margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:13px;font-weight:600;color:var(--white);">'+p.usuario+' — $'+parseFloat(p.monto).toFixed(2)+'</div><div style="font-size:11px;color:var(--muted);">'+p.metodo+' · '+p.fecha+'</div></div><span class="badge '+b+'">'+p.estado+'</span></div>';}).join('');}}
 }
-function finAprobar(id){var c=lsGet('fin_comprobantes')||[];var i=c.findIndex(function(x){return x.id===id;});if(i>-1){c[i].estado='Aprobado';lsSet('fin_comprobantes',c);}finRender();}
-function finRechazar(id){var c=lsGet('fin_comprobantes')||[];var i=c.findIndex(function(x){return x.id===id;});if(i>-1){c[i].estado='Rechazado';lsSet('fin_comprobantes',c);}finRender();}
+function finAprobar(id){
+  var comps=lsGet('fin_comprobantes')||[];var i=comps.findIndex(function(x){return x.id===id;});
+  if(i>-1){comps[i].estado='Aprobado';lsSet('fin_comprobantes',comps);}
+  if(typeof supaUpdateRow==='function') supaUpdateRow('pagos',id,{estado:'Aprobado'}).catch(function(){});
+  finRender();
+}
+function finRechazar(id){
+  var comps=lsGet('fin_comprobantes')||[];var i=comps.findIndex(function(x){return x.id===id;});
+  if(i>-1){comps[i].estado='Rechazado';lsSet('fin_comprobantes',comps);}
+  if(typeof supaUpdateRow==='function') supaUpdateRow('pagos',id,{estado:'Rechazado'}).catch(function(){});
+  finRender();
+}
 
 // ADMIN CHAT
 var adminChatUser='';
@@ -4112,16 +4180,30 @@ function publicarAnuncio(){
   renderAnunciosUser();
   navUpdateBadges();
 }
+function editarAnuncio(id){
+  var lista=lsGet('anuncios')||[];var a=lista.find(function(x){return x.id===id;});if(!a)return;
+  var nt=prompt('Título:',a.titulo);if(nt===null)return;
+  var nm=prompt('Mensaje:',a.msg);if(nm===null)return;
+  a.titulo=nt.trim();a.msg=nm.trim();lsSet('anuncios',lista);renderAnuncios();renderAnunciosUser();
+}
+function eliminarAnuncio(id){
+  if(!confirm('¿Eliminar este anuncio?'))return;
+  lsSet('anuncios',(lsGet('anuncios')||[]).filter(function(x){return x.id!==id;}));renderAnuncios();renderAnunciosUser();
+}
 function renderAnuncios(){
   var cont=document.getElementById('anuncios-lista');if(!cont)return;
   var anuncios=lsGet('anuncios')||[];
   if(!anuncios.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);">Sin anuncios</div>';return;}
   cont.innerHTML=anuncios.map(function(a){
-    return '<div style="padding:12px;background:var(--bg2);border-left:3px solid var(--blue);margin-bottom:8px;">'
+    return '<div style="padding:12px;background:var(--bg2);border-left:3px solid var(--blue);margin-bottom:8px;position:relative;">'
       +'<div style="font-family:Orbitron,sans-serif;font-size:11px;color:var(--blue);margin-bottom:4px;">'+a.tipo+'</div>'
-      +'<div style="font-size:13px;font-weight:600;color:var(--white);margin-bottom:4px;">'+a.titulo+'</div>'
+      +'<div style="font-size:13px;font-weight:600;color:var(--white);margin-bottom:4px;padding-right:70px;">'+a.titulo+'</div>'
       +'<div style="font-size:12px;color:var(--light);margin-bottom:6px;">'+a.msg+'</div>'
       +'<div style="font-size:10px;color:var(--muted);">'+a.fecha+'</div>'
+      +'<div style="position:absolute;top:10px;right:10px;display:flex;gap:6px;">'
+        +'<button class="btn-action sm" onclick="editarAnuncio('+a.id+')" title="Editar">✏️</button>'
+        +'<button class="btn-action sm red" onclick="eliminarAnuncio('+a.id+')" title="Eliminar">🗑️</button>'
+      +'</div>'
       +'</div>';
   }).join('');
 }
@@ -4427,12 +4509,16 @@ function planesGuardar(plan) {
 
 function planesSync() {
   var LF = String.fromCharCode(10);
-  var bnm = (document.getElementById('plan-basico-nm')||{}).value||'';
-  var bpr = (document.getElementById('plan-basico-precio')||{}).value||'';
-  var bft = (document.getElementById('plan-basico-feats')||{}).value||'';
-  if(bnm){var el=document.getElementById('wplan-basico-nm');if(el)el.textContent=bnm;}
-  if(bpr){var el=document.getElementById('wplan-basico-precio');if(el)el.textContent='$'+parseFloat(bpr).toFixed(2);}
-  if(bft){var el=document.getElementById('wplan-basico-feats');if(el){var feats=bft.split(LF).filter(function(f){return f.trim();});el.innerHTML=feats.map(function(f){return '<li>'+f.trim()+'</li>';}).join('');}}
+  ['basico','prop','vip'].forEach(function(p){
+    var nm=(document.getElementById('plan-'+p+'-nm')||{}).value||'';
+    var pr=(document.getElementById('plan-'+p+'-precio')||{}).value||'';
+    var tg=(document.getElementById('plan-'+p+'-tag')||{}).value||'';
+    var ft=(document.getElementById('plan-'+p+'-feats')||{}).value||'';
+    var elNm=document.getElementById('wplan-'+p+'-nm'); if(elNm&&nm)elNm.textContent=nm;
+    var elPr=document.getElementById('wplan-'+p+'-precio'); if(elPr&&pr)elPr.textContent='$'+parseFloat(pr).toFixed(2);
+    var elTg=document.getElementById('wplan-'+p+'-tag'); if(elTg&&tg)elTg.textContent=tg;
+    var elFt=document.getElementById('wplan-'+p+'-feats'); if(elFt&&ft){var feats=ft.split(LF).filter(function(f){return f.trim();});elFt.innerHTML=feats.map(function(f){return '<li>'+f.trim()+'</li>';}).join('');}
+  });
 }
 
 // ── ANUNCIOS USER MODULE ──
@@ -5587,6 +5673,6 @@ function fixPhotoUploadButtons() {
 
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t34</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t35</div>
 </body>
 </html>
