@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t42</title>
+<title>Titanium Traders · t43</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -3052,7 +3052,7 @@ function publicarResultado() {
   var fecha=new Date().toLocaleDateString('es-CO');
   var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
   msg.textContent='⏳ Publicando...';msg.className='msg-box success';msg.style.display='block';
-  supaInsert('resultados',{desc:desc,fotos:JSON.stringify(fotos),autor:autor,fecha:fecha,hora:hora}).then(function(saved){
+  supaInsert('resultados',{desc:desc,autor:autor,fecha:fecha}).then(function(saved){
     if(!saved){msg.textContent='❌ Error al publicar.';return;}
     var lista=lsGet('resultados')||[];
     lista.unshift(mapResultado(Object.assign({fotos:JSON.stringify(fotos)},saved,{desc:desc,autor:autor,fecha:fecha,hora:hora})));
@@ -3100,7 +3100,7 @@ function publicarRetiro() {
   var fecha=new Date().toLocaleDateString('es-CO');
   var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
   msg.textContent='⏳ Publicando...';msg.className='msg-box success';msg.style.display='block';
-  supaInsert('publicar_retiros',{monto:monto,comentario:comentario,fotos:JSON.stringify(fotos),autor:autor,fecha:fecha,hora:hora}).then(function(saved){
+  supaInsert('publicar_retiros',{monto:monto,comentario:comentario,autor:autor,fecha:fecha}).then(function(saved){
     if(!saved){msg.textContent='❌ Error al publicar.';return;}
     var retiros=lsGet('pubretiros')||[];
     retiros.unshift(mapRetiro(Object.assign({fotos:JSON.stringify(fotos)},saved,{monto:monto,comentario:comentario,autor:autor,fecha:fecha,hora:hora})));
@@ -3430,7 +3430,7 @@ function publicarComunidad() {
   var fecha=new Date().toLocaleDateString('es-CO');
   var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
   if(msg){msg.textContent='⏳ Publicando...';msg.className='msg-box success';msg.style.display='block';}
-  supaInsert('comunidad',{titulo:titulo,contenido:contenido,categoria:categoria,fotos:JSON.stringify(fotos),autor:autor,fecha:fecha,hora:hora}).then(function(saved){
+  supaInsert('comunidad',{titulo:titulo,contenido:contenido,autor:autor,fecha:fecha}).then(function(saved){
     if(!saved){if(msg)msg.textContent='❌ Error al publicar.';return;}
     var posts=lsGet('comunidad')||[];
     posts.unshift(mapComunidad(Object.assign({fotos:JSON.stringify(fotos)},saved,{titulo:titulo,contenido:contenido,categoria:categoria,autor:autor,fecha:fecha,hora:hora})));
@@ -3484,7 +3484,7 @@ function enviarChatVivo() {
   var autor=currentUser&&currentUser.name?currentUser.name:'TRADER';
   var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
   input.value='';
-  supaInsert('chat_vivo',{texto:texto,foto:null,autor:autor,hora:hora}).then(function(saved){
+  supaInsert('chat_vivo',{texto:texto,autor:autor}).then(function(saved){
     var msgs=lsGet('chat_vivo')||[];
     msgs.push({id:saved?saved.id:Date.now(),texto:texto,foto:null,autor:autor,hora:hora});
     if(msgs.length>200)msgs.splice(0,msgs.length-200);
@@ -3500,7 +3500,7 @@ function enviarFotoChat(input) {
     var autor=currentUser&&currentUser.name?currentUser.name:'TRADER';
     var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
     input.value='';
-    supaInsert('chat_vivo',{texto:'',foto:foto,autor:autor,hora:hora}).then(function(saved){
+    supaInsert('chat_vivo',{texto:'[foto]',autor:autor}).then(function(saved){
       var msgs=lsGet('chat_vivo')||[];
       msgs.push({id:saved?saved.id:Date.now(),texto:'',foto:foto,autor:autor,hora:hora});
       if(msgs.length>200)msgs.splice(0,msgs.length-200);
@@ -5831,6 +5831,6 @@ document.addEventListener('click', function(e) {
 
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t42</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t43</div>
 </body>
 </html>
