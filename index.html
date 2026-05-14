@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t37</title>
+<title>Titanium Traders · t39</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -990,7 +990,7 @@ textarea.pform-input{resize:vertical;min-height:90px;}
         </div>
         <div class="cards-row cards-3" style="margin-bottom:18px;">
           <div class="stat-card" style="--sc:#00c864"><div class="stat-card-icon">⭐</div><div class="stat-card-val" id="ops-mejor">$0</div><div class="stat-card-lbl">Mejor Operación</div></div>
-          <div class="stat-card" style="--sc:#ff6b6b"><div class="stat-card-icon">💔</div><div class="stat-card-val" id="ops-peor">$0</div><div class="stat-card-lbl">Peor Operación</div></div>
+
           <div class="stat-card" style="--sc:#C0C8D8"><div class="stat-card-icon">📊</div><div class="stat-card-val" id="ops-promedio">$0</div><div class="stat-card-lbl">Promedio</div></div>
         </div>
         <div class="content-card" style="margin-bottom:20px;">
@@ -1219,7 +1219,7 @@ textarea.pform-input{resize:vertical;min-height:90px;}
         </div>
         <div class="cards-row cards-3" style="margin-bottom:18px;">
           <div class="stat-card" style="--sc:#00c864"><div class="stat-card-icon">⭐</div><div class="stat-card-val" id="ops-mejor">$0</div><div class="stat-card-lbl">Mejor Operación</div></div>
-          <div class="stat-card" style="--sc:#ff6b6b"><div class="stat-card-icon">💔</div><div class="stat-card-val" id="ops-peor">$0</div><div class="stat-card-lbl">Peor Operación</div></div>
+
           <div class="stat-card" style="--sc:#C0C8D8"><div class="stat-card-icon">📊</div><div class="stat-card-val" id="ops-promedio">$0</div><div class="stat-card-lbl">Promedio</div></div>
         </div>
         <div class="content-card" style="margin-bottom:20px;">
@@ -3003,10 +3003,10 @@ function _comCard(item, accentColor, badgeText, badgeColor) {
   body.innerHTML=head+cont+foot;
   // bind edit/del buttons
   body.querySelectorAll('[data-edit]').forEach(function(btn){
-    btn.onclick=function(){window[this.getAttribute('data-fn')](parseInt(this.getAttribute('data-edit')));};
+    btn.onclick=function(){window[this.getAttribute('data-fn')](this.getAttribute('data-edit'));};
   });
   body.querySelectorAll('[data-del]').forEach(function(btn){
-    btn.onclick=function(){window[this.getAttribute('data-fn')](parseInt(this.getAttribute('data-del')));};
+    btn.onclick=function(){window[this.getAttribute('data-fn')](this.getAttribute('data-del'));};
   });
   div.appendChild(body);
   return div.outerHTML;
@@ -3020,26 +3020,34 @@ function publicarResultado() {
   var msg=document.getElementById('res-msg');
   if(!desc){msg.textContent='⚠️ Escribe una descripción.';msg.className='msg-box error';msg.style.display='block';setTimeout(function(){msg.style.display='none';},3000);return;}
   var fotos=(_comFotos.res||[]).filter(Boolean);
-  var resultados=lsGet('resultados')||[];
-  resultados.unshift({id:Date.now(),desc:desc,fotos:fotos,autor:currentUser&&currentUser.name?currentUser.name:'TRADER',
-    fecha:new Date().toLocaleDateString('es-CO'),hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()});
-  lsSet('resultados',resultados);
-  document.getElementById('res-desc').value='';
-  _comFotos.res=[null,null,null];
-  [1,2,3].forEach(function(n){var l=document.getElementById('res-foto'+n+'-label');if(l)l.textContent='Foto '+n;});
-  var p=document.getElementById('res-fotos-preview');if(p)p.innerHTML='';
-  msg.textContent='✅ Resultado publicado.';msg.className='msg-box success';msg.style.display='block';
-  setTimeout(function(){msg.style.display='none';},3000);
-  renderResultados();
+  var autor=currentUser&&currentUser.name?currentUser.name:'TRADER';
+  var fecha=new Date().toLocaleDateString('es-CO');
+  var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
+  msg.textContent='⏳ Publicando...';msg.className='msg-box success';msg.style.display='block';
+  supaInsert('resultados',{desc:desc,fotos:JSON.stringify(fotos),autor:autor,fecha:fecha,hora:hora}).then(function(saved){
+    var rid = saved ? saved.id : Date.now();
+    var resultados=lsGet('resultados')||[];
+    resultados.unshift({id:rid,desc:desc,fotos:fotos,autor:autor,fecha:fecha,hora:hora});
+    _origLsSet('resultados',resultados);
+    document.getElementById('res-desc').value='';
+    _comFotos.res=[null,null,null];
+    [1,2,3].forEach(function(n){var l=document.getElementById('res-foto'+n+'-label');if(l)l.textContent='Foto '+n;});
+    var p=document.getElementById('res-fotos-preview');if(p)p.innerHTML='';
+    msg.textContent='✅ Resultado publicado.';setTimeout(function(){msg.style.display='none';},3000);
+    renderResultados();
+  });
 }
 function editarResultado(id){
   var lista=lsGet('resultados')||[];var r=lista.find(function(x){return sameId(x.id,id);});if(!r)return;
   var nd=prompt('Descripción:',r.desc);if(nd===null)return;
-  r.desc=nd.trim();lsSet('resultados',lista);renderResultados();
+  r.desc=nd.trim();
+  supaUpdateRow('resultados',id,{desc:r.desc}).catch(function(){});
+  _origLsSet('resultados',lista);renderResultados();
 }
 function eliminarResultado(id){
   if(!confirm('¿Eliminar?'))return;
-  lsSet('resultados',(lsGet('resultados')||[]).filter(function(x){return !sameId(x.id,id);}));renderResultados();
+  supaDelete('resultados',id).catch(function(){});
+  _origLsSet('resultados',(lsGet('resultados')||[]).filter(function(x){return !sameId(x.id,id);}));renderResultados();
 }
 function renderResultados() {
   var feed=document.getElementById('resultados-feed');if(!feed)return;
@@ -3057,28 +3065,36 @@ function publicarRetiro() {
   var msg=document.getElementById('pub-retiro-msg');
   if(!monto){msg.textContent='⚠️ Ingresa el monto.';msg.className='msg-box error';msg.style.display='block';setTimeout(function(){msg.style.display='none';},3000);return;}
   var fotos=(_comFotos.ret||[]).filter(Boolean);
-  var retiros=lsGet('pubretiros')||[];
-  retiros.unshift({id:Date.now(),monto:monto,comentario:comentario,fotos:fotos,autor:currentUser&&currentUser.name?currentUser.name:'TRADER',
-    fecha:new Date().toLocaleDateString('es-CO'),hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()});
-  lsSet('pubretiros',retiros);
-  document.getElementById('pub-retiro-monto').value='';
-  document.getElementById('pub-retiro-comentario').value='';
-  _comFotos.ret=[null,null,null];
-  [1,2,3].forEach(function(n){var l=document.getElementById('ret-foto'+n+'-label');if(l)l.textContent='Foto '+n;});
-  var p=document.getElementById('ret-fotos-preview');if(p)p.innerHTML='';
-  msg.textContent='✅ Retiro publicado.';msg.className='msg-box success';msg.style.display='block';
-  setTimeout(function(){msg.style.display='none';},3000);
-  renderPubRetiros();
+  var autor=currentUser&&currentUser.name?currentUser.name:'TRADER';
+  var fecha=new Date().toLocaleDateString('es-CO');
+  var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
+  msg.textContent='⏳ Publicando...';msg.className='msg-box success';msg.style.display='block';
+  supaInsert('publicar_retiros',{monto:monto,comentario:comentario,fotos:JSON.stringify(fotos),autor:autor,fecha:fecha,hora:hora}).then(function(saved){
+    var rid=saved?saved.id:Date.now();
+    var retiros=lsGet('pubretiros')||[];
+    retiros.unshift({id:rid,monto:monto,comentario:comentario,fotos:fotos,autor:autor,fecha:fecha,hora:hora});
+    _origLsSet('pubretiros',retiros);
+    document.getElementById('pub-retiro-monto').value='';
+    document.getElementById('pub-retiro-comentario').value='';
+    _comFotos.ret=[null,null,null];
+    [1,2,3].forEach(function(n){var l=document.getElementById('ret-foto'+n+'-label');if(l)l.textContent='Foto '+n;});
+    var p=document.getElementById('ret-fotos-preview');if(p)p.innerHTML='';
+    msg.textContent='✅ Retiro publicado.';setTimeout(function(){msg.style.display='none';},3000);
+    renderPubRetiros();
+  });
 }
 function editarPubRetiro(id){
   var lista=lsGet('pubretiros')||[];var r=lista.find(function(x){return sameId(x.id,id);});if(!r)return;
   var nm=prompt('Monto:',r.monto);if(nm===null)return;
   var nc=prompt('Comentario:',r.comentario||'');if(nc===null)return;
-  r.monto=nm.trim();r.comentario=nc.trim();lsSet('pubretiros',lista);renderPubRetiros();
+  r.monto=nm.trim();r.comentario=nc.trim();
+  supaUpdateRow('publicar_retiros',id,{monto:r.monto,comentario:r.comentario}).catch(function(){});
+  _origLsSet('pubretiros',lista);renderPubRetiros();
 }
 function eliminarPubRetiro(id){
   if(!confirm('¿Eliminar?'))return;
-  lsSet('pubretiros',(lsGet('pubretiros')||[]).filter(function(x){return !sameId(x.id,id);}));renderPubRetiros();
+  supaDelete('publicar_retiros',id).catch(function(){});
+  _origLsSet('pubretiros',(lsGet('pubretiros')||[]).filter(function(x){return !sameId(x.id,id);}));renderPubRetiros();
 }
 function renderPubRetiros() {
   var feed=document.getElementById('pubretiros-feed');if(!feed)return;
@@ -3299,12 +3315,22 @@ function renderRetirosCuenta() {
   const key='retiros_'+currentCuentaNombre.replace(/\s/g,'_');
   const retiros=lsGet(key)||[];
   if(!retiros.length){ tarjetas.innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px;">No hay retiros registrados.</div>'; return; }
-  tarjetas.innerHTML=retiros.map(r=>`
-    <div style="background:var(--bg3);border:1px solid var(--border);padding:20px;border-left:3px solid var(--gold);">
-      <div style="font-family:'Orbitron',sans-serif;font-size:18px;font-weight:700;color:var(--gold);">$${r.monto}</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px;">${r.metodo}</div>
-      <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-top:4px;">${r.fecha||r.fechaReg} ${r.ref?'· Ref: '+r.ref:''}</div>
-    </div>`).join('');
+  tarjetas.innerHTML=retiros.map(r=>{
+    const monto = parseFloat(r.monto)||0;
+    const fecha = r.fecha||r.fechaReg||'—';
+    return `<div style="background:var(--bg3);border:1px solid rgba(255,215,0,0.25);border-radius:2px;overflow:hidden;position:relative;">
+      <div style="background:linear-gradient(135deg,rgba(255,215,0,0.12),rgba(255,215,0,0.04));padding:24px 20px 16px;">
+        <div style="font-size:10px;color:var(--gold);font-family:Orbitron,sans-serif;letter-spacing:3px;margin-bottom:10px;opacity:.8;">💸 RETIRO CONFIRMADO</div>
+        <div style="font-family:Orbitron,sans-serif;font-size:28px;font-weight:700;color:var(--gold);margin-bottom:4px;">$${monto.toFixed(2)}</div>
+        <div style="font-size:12px;color:var(--light);margin-bottom:14px;">${r.metodo||'—'}</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <div><div style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:2px;">FECHA</div><div style="font-size:11px;color:var(--white);font-family:Share Tech Mono,monospace;">${fecha}</div></div>
+          ${r.ref?`<div><div style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:2px;">REFERENCIA</div><div style="font-size:11px;color:var(--white);font-family:Share Tech Mono,monospace;">${r.ref}</div></div>`:''}
+        </div>
+      </div>
+      <div style="position:absolute;top:12px;right:14px;font-size:28px;opacity:.15;">💰</div>
+    </div>`;
+  }).join('');
 }
 
 // ══════════════════════════════════════
@@ -3360,32 +3386,42 @@ function cargarConfigCuenta() {
 //  COMUNIDAD
 // ══════════════════════════════════════
 function publicarComunidad() {
-  const titulo    = document.getElementById('com-titulo')?.value.trim() || '';
-  const contenido = document.getElementById('com-contenido')?.value.trim() || '';
-  const categoria = document.getElementById('com-categoria')?.value || '';
-  const msg       = document.getElementById('com-msg');
-  if (!titulo || !contenido) {
-    if(msg){msg.textContent='⚠️ Completa el título y el contenido.'; msg.className='msg-box error'; msg.style.display='block'; setTimeout(()=>{ msg.style.display='none'; },3000);} return;
-  }
-  const posts=lsGet('comunidad')||[];
-  posts.unshift({ id:Date.now(), titulo, contenido, categoria, autor:currentUser?.name||'TRADER',
-    fecha:new Date().toLocaleDateString('es-CO'),
-    hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase() });
-  lsSet('comunidad', posts);
-  if(document.getElementById('com-titulo'))    document.getElementById('com-titulo').value='';
-  if(document.getElementById('com-contenido')) document.getElementById('com-contenido').value='';
-  if(msg){msg.textContent='✅ Publicado en la comunidad.'; msg.className='msg-box success'; msg.style.display='block'; setTimeout(()=>{ msg.style.display='none'; },3000);}
-  renderComunidad();
+  var titulo=document.getElementById('com-titulo')?document.getElementById('com-titulo').value.trim():'';
+  var contenido=document.getElementById('com-contenido')?document.getElementById('com-contenido').value.trim():'';
+  var categoria=document.getElementById('com-categoria')?document.getElementById('com-categoria').value:'General';
+  var msg=document.getElementById('com-msg');
+  if(!titulo){if(msg){msg.textContent='⚠️ Escribe un título.';msg.className='msg-box error';msg.style.display='block';setTimeout(function(){msg.style.display='none';},3000);}return;}
+  var fotos=(_comFotos&&_comFotos.com||[]).filter(Boolean);
+  var autor=currentUser&&currentUser.name?currentUser.name:'TRADER';
+  var fecha=new Date().toLocaleDateString('es-CO');
+  var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
+  if(msg){msg.textContent='⏳ Publicando...';msg.className='msg-box success';msg.style.display='block';}
+  supaInsert('comunidad',{titulo:titulo,contenido:contenido,categoria:categoria,fotos:JSON.stringify(fotos),autor:autor,fecha:fecha,hora:hora}).then(function(saved){
+    var pid=saved?saved.id:Date.now();
+    var posts=lsGet('comunidad')||[];
+    posts.unshift({id:pid,titulo:titulo,contenido:contenido,categoria:categoria,fotos:fotos,autor:autor,fecha:fecha,hora:hora});
+    _origLsSet('comunidad',posts);
+    if(document.getElementById('com-titulo'))document.getElementById('com-titulo').value='';
+    if(document.getElementById('com-contenido'))document.getElementById('com-contenido').value='';
+    if(_comFotos){_comFotos.com=[null,null,null];}
+    [1,2,3].forEach(function(n){var l=document.getElementById('com-foto'+n+'-label');if(l)l.textContent='Foto '+n;});
+    var p=document.getElementById('com-fotos-preview');if(p)p.innerHTML='';
+    if(msg){msg.textContent='✅ Publicado.';setTimeout(function(){msg.style.display='none';},3000);}
+    renderComunidad();
+  });
 }
 function editarPostComunidad(id){
   var lista=lsGet('comunidad')||[];var p=lista.find(function(x){return sameId(x.id,id);});if(!p)return;
   var nt=prompt('Título:',p.titulo);if(nt===null)return;
   var nc=prompt('Contenido:',p.contenido||'');if(nc===null)return;
-  p.titulo=nt.trim();p.contenido=nc.trim();lsSet('comunidad',lista);renderComunidad();
+  p.titulo=nt.trim();p.contenido=nc.trim();
+  supaUpdateRow('comunidad',id,{titulo:p.titulo,contenido:p.contenido}).catch(function(){});
+  _origLsSet('comunidad',lista);renderComunidad();
 }
 function eliminarPostComunidad(id){
   if(!confirm('¿Eliminar?'))return;
-  lsSet('comunidad',(lsGet('comunidad')||[]).filter(function(x){return !sameId(x.id,id);}));renderComunidad();
+  supaDelete('comunidad',id).catch(function(){});
+  _origLsSet('comunidad',(lsGet('comunidad')||[]).filter(function(x){return !sameId(x.id,id);}));renderComunidad();
 }
 var _comFiltroActivo='todos';
 function renderComunidad() {
@@ -3408,31 +3444,39 @@ function renderComunidad() {
 function enviarChatVivo() {
   var input=document.getElementById('chat-vivo-input');if(!input)return;
   var texto=input.value.trim();if(!texto)return;
-  var msgs=lsGet('chat_vivo')||[];
-  msgs.push({id:Date.now(),texto:texto,foto:null,autor:currentUser&&currentUser.name?currentUser.name:'TRADER',
-    hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()});
-  if(msgs.length>200)msgs.splice(0,msgs.length-200);
-  lsSet('chat_vivo',msgs);
+  var autor=currentUser&&currentUser.name?currentUser.name:'TRADER';
+  var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
   input.value='';
-  renderChatVivo();
+  supaInsert('chat_vivo',{texto:texto,foto:null,autor:autor,hora:hora}).then(function(saved){
+    var msgs=lsGet('chat_vivo')||[];
+    msgs.push({id:saved?saved.id:Date.now(),texto:texto,foto:null,autor:autor,hora:hora});
+    if(msgs.length>200)msgs.splice(0,msgs.length-200);
+    _origLsSet('chat_vivo',msgs);
+    renderChatVivo();
+  });
 }
 function enviarFotoChat(input) {
   if(!input.files||!input.files[0])return;
   var r=new FileReader();
   r.onload=function(e){
-    var msgs=lsGet('chat_vivo')||[];
-    msgs.push({id:Date.now(),texto:'',foto:e.target.result,autor:currentUser&&currentUser.name?currentUser.name:'TRADER',
-      hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()});
-    if(msgs.length>200)msgs.splice(0,msgs.length-200);
-    lsSet('chat_vivo',msgs);
+    var foto=e.target.result;
+    var autor=currentUser&&currentUser.name?currentUser.name:'TRADER';
+    var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
     input.value='';
-    renderChatVivo();
+    supaInsert('chat_vivo',{texto:'',foto:foto,autor:autor,hora:hora}).then(function(saved){
+      var msgs=lsGet('chat_vivo')||[];
+      msgs.push({id:saved?saved.id:Date.now(),texto:'',foto:foto,autor:autor,hora:hora});
+      if(msgs.length>200)msgs.splice(0,msgs.length-200);
+      _origLsSet('chat_vivo',msgs);
+      renderChatVivo();
+    });
   };
   r.readAsDataURL(input.files[0]);
 }
 function eliminarMsgChat(id) {
   if(!confirm('¿Eliminar mensaje?'))return;
-  lsSet('chat_vivo',(lsGet('chat_vivo')||[]).filter(function(m){return !sameId(m.id,id);}));
+  supaDelete('chat_vivo',id).catch(function(){});
+  _origLsSet('chat_vivo',(lsGet('chat_vivo')||[]).filter(function(m){return !sameId(m.id,id)}));
   renderChatVivo();
 }
 function renderChatVivo() {
@@ -3810,7 +3854,7 @@ function renderStatsOps() {
   set('ops-perdedoras',s.perdedoras);
   set('ops-winrate',   s.winRate.toFixed(1) + '%');
   set('ops-mejor',     s.total ? (s.mejorOp>=0?'+':'') + fmt$(s.mejorOp) : '$0');
-  set('ops-peor',      s.total ? fmt$(s.peorOp) : '$0');
+  var elPeor=document.getElementById('ops-peor'); if(elPeor){elPeor.textContent=s.total?fmt$(s.peorOp):'$0'; elPeor.style.color=s.peorOp<0?'#ff6b6b':'var(--gold)';}
   set('ops-promedio',  s.total ? (s.promedio>=0?'+':'') + fmt$(s.promedio) : '$0');
 }
 
@@ -3875,43 +3919,66 @@ function renderCalendario() {
     ? opsMesCount + ' operaciones · ' + diasMesOp + ' días operados · Win Rate ' + wrMes + '%'
     : 'Sin operaciones este mes';
 
-  // Construir grilla del mes
+  // Construir grilla del mes con fila resumen semanal
   const grid = document.getElementById('cal-grid-body');
-  const headers = '<div class="cal-header">LUN</div><div class="cal-header">MAR</div><div class="cal-header">MIÉ</div><div class="cal-header">JUE</div><div class="cal-header">VIE</div><div class="cal-header">SÁB</div><div class="cal-header">DOM</div>';
 
-  const firstDay = new Date(year, month, 1).getDay(); // 0=dom
-  // Convertir a lunes-primero
+  // Headers: 7 días + columna SEMANA
+  const headers = '<div class="cal-header">LUN</div><div class="cal-header">MAR</div><div class="cal-header">MIÉ</div><div class="cal-header">JUE</div><div class="cal-header">VIE</div><div class="cal-header">SÁB</div><div class="cal-header">DOM</div><div class="cal-header" style="color:var(--gold);background:rgba(255,215,0,0.07);">SEMANA</div>';
+
+  const firstDay = new Date(year, month, 1).getDay();
   const offset = (firstDay === 0) ? 6 : firstDay - 1;
   const daysInMonth = new Date(year, month+1, 0).getDate();
 
-  let cells = headers;
-  // Celdas vacías iniciales
-  for (let i = 0; i < offset; i++) cells += '<div class="cal-day empty"></div>';
+  // Construir semanas: cada semana es un array de 7 slots (null = vacío)
+  let weeks = [];
+  let currentWeek = new Array(7).fill(null);
+  let col = offset;
 
-  let weekPnl = 0, weekIdx = 1;
-  let dayOfWeek = offset; // 0=lun posición
-
+  // Rellenar días vacíos al inicio
   for (let d = 1; d <= daysInMonth; d++) {
-    const info = diasMes[d];
-    const pnl  = info ? info.resultado : null;
-    const cls  = pnl === null ? 'cal-day' : (pnl >= 0 ? 'cal-day positive' : 'cal-day negative');
-    const numC = pnl === null ? 'var(--muted)' : (pnl >= 0 ? '#00c864' : '#ff6b6b');
-    if (info) weekPnl += pnl;
-
-    cells += `<div class="${cls}">
-      <div class="cal-day-num" style="color:${numC}">${d}</div>
-      ${info ? `<div style="font-size:9px;color:var(--muted)">${info.ops} op${info.ops>1?'s':''}</div><div class="cal-day-pnl" style="color:${numC}">${pnl>=0?'+':''}${fmt$(pnl)}</div>` : ''}
-    </div>`;
-
-    dayOfWeek++;
-    // Fin de semana (domingo = posición 6)
-    if (dayOfWeek % 7 === 0 || d === daysInMonth) {
-      const wc = weekPnl >= 0 ? '#00c864' : '#ff6b6b';
-      cells += `<div class="cal-week-total">SEM ${weekIdx} · <span style="color:${wc}">${weekPnl>=0?'+':''}${fmt$(weekPnl)}</span></div>`;
-      weekPnl = 0; weekIdx++;
+    currentWeek[col] = d;
+    col++;
+    if (col === 7) {
+      weeks.push([...currentWeek]);
+      currentWeek = new Array(7).fill(null);
+      col = 0;
     }
   }
+  if (col > 0) weeks.push([...currentWeek]);
+
+  let cells = headers;
+  weeks.forEach(function(week, wi) {
+    let weekOps = 0, weekPnl = 0;
+    week.forEach(function(d) {
+      if (d === null) {
+        cells += '<div class="cal-day empty"></div>';
+        return;
+      }
+      const info = diasMes[d];
+      const pnl  = info ? info.resultado : null;
+      const cls  = pnl === null ? 'cal-day' : (pnl >= 0 ? 'cal-day positive' : 'cal-day negative');
+      const numC = pnl === null ? 'var(--muted)' : (pnl >= 0 ? '#00c864' : '#ff6b6b');
+      if (info) { weekOps += info.ops; weekPnl += pnl; }
+      cells += '<div class="'+cls+'">'
+        +'<div class="cal-day-num" style="color:'+numC+'">'+d+'</div>'
+        +(info ? '<div style="font-size:9px;color:var(--muted)">'+info.ops+' op'+(info.ops>1?'s':'')+'</div>'
+               +'<div class="cal-day-pnl" style="color:'+numC+'">'+(pnl>=0?'+':'')+fmt$(pnl)+'</div>' : '')
+        +'</div>';
+    });
+    // Celda resumen semanal
+    const wc  = weekPnl >= 0 ? '#00c864' : '#ff6b6b';
+    const has = weekOps > 0;
+    cells += '<div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.15);padding:10px 8px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;">'
+      +'<div style="font-size:8px;color:var(--gold);font-family:Orbitron,sans-serif;letter-spacing:1px;">SEM '+(wi+1)+'</div>'
+      +(has ? '<div style="font-size:10px;color:var(--muted);">'+weekOps+' op'+(weekOps>1?'s':'')+'</div>'
+            + '<div style="font-size:12px;font-weight:700;color:'+wc+';font-family:Orbitron,sans-serif;">'+(weekPnl>=0?'+':'')+fmt$(weekPnl)+'</div>'
+            : '<div style="font-size:10px;color:var(--muted);opacity:.4;">—</div>')
+      +'</div>';
+  });
   grid.innerHTML = cells;
+
+  // Ajustar grid a 8 columnas
+  grid.style.gridTemplateColumns = 'repeat(8, 1fr)';
 }
 
 function cambiarMesCal(dir) {
@@ -5347,13 +5414,13 @@ async function syncAllFromSupabase() {
 
     // Public posts
     var resultados = await supaSelect('resultados', 'order=created_at.desc');
-    if(resultados) _origLsSet('resultados', resultados);
+    if(resultados) _origLsSet('resultados', resultados.map(function(r){var f=r.fotos;if(typeof f==='string'){try{f=JSON.parse(f);}catch(e){f=[];}}return {id:r.id,desc:r.desc||r.descripcion||'',fotos:f||[],autor:r.autor||'',fecha:r.fecha||'',hora:r.hora||''};}));
     var retiros = await supaSelect('publicar_retiros', 'order=created_at.desc');
-    if(retiros) _origLsSet('pubretiros', retiros);
+    if(retiros) _origLsSet('pubretiros', retiros.map(function(r){var f=r.fotos;if(typeof f==='string'){try{f=JSON.parse(f);}catch(e){f=[];}}return {id:r.id,monto:r.monto||0,comentario:r.comentario||'',fotos:f||[],autor:r.autor||'',fecha:r.fecha||'',hora:r.hora||''};}));
     var com = await supaSelect('comunidad', 'order=created_at.desc');
-    if(com) _origLsSet('comunidad', com);
-    var chat = await supaSelect('chat_vivo', 'order=created_at.desc&limit=100');
-    if(chat) _origLsSet('chat_vivo', chat);
+    if(com) _origLsSet('comunidad', com.map(function(p){var f=p.fotos;if(typeof f==='string'){try{f=JSON.parse(f);}catch(e){f=[];}}return {id:p.id,titulo:p.titulo||'',contenido:p.contenido||'',categoria:p.categoria||'General',fotos:f||[],autor:p.autor||'',fecha:p.fecha||'',hora:p.hora||''};}));
+    var chat = await supaSelect('chat_vivo', 'order=created_at.asc&limit=100');
+    if(chat) _origLsSet('chat_vivo', chat.map(function(m){return {id:m.id,texto:m.texto||'',foto:m.foto||null,autor:m.autor||'',hora:m.hora||''};}));
 
     // Planes config
     var planes = await supaSelect('planes_config', 'order=orden.asc');
@@ -5700,6 +5767,6 @@ document.addEventListener('click', function(e) {
 
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t37</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t39</div>
 </body>
 </html>
