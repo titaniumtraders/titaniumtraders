@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Titanium Traders · t44</title>
+<title>Titanium Traders · t45</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -2432,6 +2432,12 @@ function enterPanel(){
   document.getElementById('view-welcome').classList.remove('active');
   document.getElementById('view-panel').classList.add('active');
 
+  // Restaurar último módulo
+  var lastMod=sessionStorage.getItem('tt_lastModule');
+  var lastTitle=sessionStorage.getItem('tt_lastTitle');
+  var lastSub=sessionStorage.getItem('tt_lastSub');
+  if(lastMod){setTimeout(function(){showModule(lastMod,lastTitle||'',lastSub||'');},300);}
+
   // Set user info
   document.getElementById('pnavName').textContent = currentUser.name;
   document.getElementById('pnavRole').textContent = currentUser.role;
@@ -2467,6 +2473,10 @@ function regPreviewComp(input){if(!input.files||!input.files[0])return;var r=new
 
 // ── MODULES ──
 function showModule(id, title, sub){
+  currentModule=id;
+  sessionStorage.setItem('tt_lastModule',id);
+  sessionStorage.setItem('tt_lastTitle',title||'');
+  sessionStorage.setItem('tt_lastSub',sub||'');
   // Hide all
   document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));
   document.querySelectorAll('.sitem').forEach(s=>s.classList.remove('active'));
@@ -2616,7 +2626,8 @@ function guardarEvento() {
 }
 
 function eliminarEvento(id) {
-  lsSet('eventos', (lsGet('eventos')||[]).filter(e=>e.id!==id));
+  supaDelete('eventos',id).catch(function(){});
+  lsSet('eventos', (lsGet('eventos')||[]).filter(function(e){return !sameId(e.id,id);}));
   renderEventosAdmin(); renderEventosUsuario();
 }
 
@@ -2700,7 +2711,8 @@ function cambiarEstadoSenal(id,estado){
 }
 
 function eliminarSenal(id){
-  lsSet('senales',(lsGet('senales')||[]).filter(s=>s.id!==id));
+  supaDelete('senales',id).catch(function(){});
+  lsSet('senales',(lsGet('senales')||[]).filter(function(s){return !sameId(s.id,id);}));
   renderSenalesAdmin(); renderSenalesUsuario();
 }
 
@@ -4073,6 +4085,10 @@ function mcGuardarPerfil(){
   lsSet('mi_perfil',p);
   mcCargarPerfil();
   var pn=document.getElementById('pnavName');if(pn)pn.textContent=p.nombre;
+  // Actualizar en Supabase para que admin vea cambios en tiempo real
+  if(currentUser&&currentUser.id){
+    supaUpdateRow('usuarios',currentUser.id,{nombre:p.nombre,usuario:p.usuario}).catch(function(){});
+  }
   mcShowMsg('mc-perfil-msg','✅ Perfil guardado.','success');
 }
 
@@ -4172,6 +4188,7 @@ function acEditar(id){
 }
 function acEliminar(id){
   if(!confirm('¿Eliminar?'))return;
+  supaDelete('academia',id).catch(function(){});
   lsSet('academia',(lsGet('academia')||[]).filter(function(a){return !sameId(a.id,id);}));acRenderAdmin();acRenderUser();
 }
 var AC_IC={video:'🎥',libro:'📖',foto:'🖼️',analisis:'📊'};
@@ -4313,6 +4330,7 @@ function editarAnuncio(id){
 }
 function eliminarAnuncio(id){
   if(!confirm('¿Eliminar este anuncio?'))return;
+  supaDelete('anuncios',id).catch(function(){});
   lsSet('anuncios',(lsGet('anuncios')||[]).filter(function(x){return !sameId(x.id,id);}));renderAnuncios();renderAnunciosUser();
 }
 function renderAnuncios(){
@@ -4828,7 +4846,8 @@ function livePublicar() {
 
 function liveEliminar(id) {
   if(!confirm('¿Eliminar este live?')) return;
-  lsSet('lives', (lsGet('lives')||[]).filter(function(l){return l.id!==id;}));
+  supaDelete('lives',id).catch(function(){});
+  lsSet('lives', (lsGet('lives')||[]).filter(function(l){return !sameId(l.id,id);}));
   liveRenderAdmin(); liveRenderUser();
 }
 
@@ -5836,6 +5855,6 @@ document.addEventListener('click', function(e) {
 
 </script>
 
-<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t44</div>
+<div id="versionMark" style="position:fixed;bottom:10px;right:14px;z-index:9999;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,191,255,0.2);letter-spacing:2px;">TITANIUM TRADERS · t45</div>
 </body>
 </html>
